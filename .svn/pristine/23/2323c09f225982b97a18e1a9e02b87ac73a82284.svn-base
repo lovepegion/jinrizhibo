@@ -1,0 +1,413 @@
+<template>
+  <div class="work-detail">
+		<div class="detail-body-wrapper">
+			<div class="detail-body">
+				<h1 class="detail-title">{{ detail.title }}</h1>
+				<div class="detail-info">
+					<span v-show="detail.source" class="detail-info-item" style="background: #F2F2F2;">转自{{ detail.source }}</span>
+					<span class="detail-info-item">{{ detail.createDate }}</span>
+					<span class="detail-info-item">{{ detail.nickname }}</span>
+				</div>
+				<!-- plus0视频框 -->
+				<div class="plus0_wrap1">
+					<!-- plus0_1频道 -->
+					<div class="plus0_1_channel">{{detail.channelName}} <span v-if="secondTitle">- {{secondTitle}}</span></div>
+					<!-- plus0_1_1用户视频 -->
+					<video
+						ref="userVideo"
+						controls
+						disablePictureInPicture
+						controlsList="nodownload noremoteplayback"
+						:src="baseUrl + detail.videoUrl"
+						style="width: 100%; height: 438px;"
+					/>
+					<!-- plus0_1_2插播的视频 -->
+					<video
+						ref="loadVideo"
+						:src="baseUrl+adUrl"
+						style="width: 100%; height: 438px; display: none"
+						controls
+					></video>
+					<!-- plus0_2_视频简介 -->
+					<div class="plus0_2_synopsis" v-if="synopsis">{{synopsis}}</div>
+					<!-- plus0_3_语言切换 -->
+					<div class="plus0_3_langChoose" v-if="videoUrls.length">
+						<select class="plus0_3_langChoose_item" v-model="switchedIndex" @change="onSwitch()">
+							<option value='' disabled selected>语言切换</option>
+							<option :value="-1">{{mainLang}}</option>
+							<option v-for="(item, index) in videoUrls" :key="index" :value="index">{{item.language}}</option>
+						</select>
+					</div>
+				</div>
+				<div class="detail-content">
+					{{ detail.content }}
+				</div>
+				<!-- plus1评论区 -->
+				<div class="plus1_wrap">
+					<div style="fontSize:18px;marginBottom:20px">{{comments.length}}条评论</div>
+					<!-- plus1_1_发表评论,只有登录才显示 -->
+					<div v-if="$store.state.userInfo.id" class="plus1_1_warp">
+						<!-- plus_1_1_1_用户头像 -->
+						<div class="plus_1_1_1__wrap"><img :src="'/webfile'+$store.state.userInfo.headImage"></div>
+						<!-- plus_1_1_2_写评论区 -->
+						<textarea class="plus_1_1_2_write" v-model="commentContent" cols="100" rows="5" style="resize:none" placeholder="发一条积极的评论"></textarea>
+						<!-- plus_1_1_3_发表评论按钮 -->
+						<button class="plus_1_1_3_button" @click="onSendComment">发表评论</button>
+					</div>
+					<!-- plus1_2_评论列表 -->
+					<ul>
+						<li v-for="(item,index) in comments" :key="index" class="plus1_2_item">
+								<CommentItem
+									:userName="item.userName"
+									:content="item.content"
+									:createDate="item.createDate"
+								></CommentItem>
+						</li>
+					</ul>
+				</div>
+			</div>
+			<div class="right-info">
+				<div class="user-name">{{ detail.nickname }}</div>
+				<a-button type="primary" @click="doAttention(1, 1)" v-if="!detail.focusUserFlag" :disabled="detail.userId === $store.state.userInfo.id"><a-icon type="heart" />关注</a-button>
+				<a-button @click="doAttention(2, 2)" v-if="detail.focusUserFlag"><a-icon type="heart" />取消关注</a-button>
+
+				<a-button type="primary" @click="doFav(1, 1)" v-if="!collectionFlag"  :disabled="detail.userId === $store.state.userInfo.id"><a-icon type="star" />收藏</a-button>
+				<a-button @click="doFav(2, 2)" v-if="collectionFlag"><a-icon type="star" />取消收藏</a-button>
+
+				<a-button type="primary" @click="doLike(1, 2)" v-if="!likeFlag"  :disabled="detail.userId === $store.state.userInfo.id"><span class="iconfont icon-dianzan" style="fontSize: 12px;marginRight:9px"></span><span>点赞</span></a-button>
+				<a-button @click="doLike(2, 2)" v-if="likeFlag"><span class="iconfont icon-dianzan" style="fontSize: 12px;marginRight:9px"></span><span>取消点赞</span></a-button>
+			</div>
+		</div>
+	</div>
+</template>
+
+<script>
+import { getProductDetail, collectionProduct, follow } from "@/api/make"
+import { sendComment, getComments, collectProduct, likeProduct, followProduct } from '@/api/update.js'
+import CommentItem from '@/components/commentItem/CommentItem.vue'
+export default {
+	name: 'Detail',
+	components: { CommentItem },
+	data() {
+		return {
+			baseUrl: process.env.VUE_APP_ZB_DOMAIN_FILE, // 播放视频的基准url
+			detail: {},
+			likeFlag: false, // 点赞状态
+			collectionFlag: false, // 收藏状态
+			comments: [], // 视频评论
+			commentsShow: false, // 是否展示评论区
+			commentFlag: true, // 查看/收起评论
+			commentContent: '', // 评论内容
+			adTime: '开始', // 视频插入位置
+			adUrl: '', // 插入视频的链接
+			secondTitle: '', // 二级标题
+			synopsis: '', // 视频简介
+			showDes: false, // 是否展示简介
+			switchedIndex: -1, // 选择的语种索引
+			videoUrls: [], // 其他语言的语种和播放链接
+			mainLang: '普通话' // 主语言名称
+		}
+	},
+	methods: {
+		onSwitch () {
+			const userVideoRef = this.$refs.userVideo
+			if (this.switchedIndex === -1) {
+				userVideoRef.src = this.baseUrl + this.detail.videoUrl
+				userVideoRef.load()
+			} else {
+				userVideoRef.src = this.videoUrls[this.switchedIndex].videoUrl
+				userVideoRef.load()
+			}
+		},
+			async doAttention(flag, type) {
+				this._follow(flag)
+				await followProduct(this.detail.id, type)
+			},
+			async doFav(flag, type) {
+				this._collectionProduct(flag)
+				await collectProduct(this.detail.id, type)
+				this.collectionFlag = !this.collectionFlag
+			},
+			// 点赞和取消点赞
+			async doLike(type, actionType) {
+				await likeProduct(this.detail.id, type, actionType)
+				this.likeFlag = !this.likeFlag
+			},
+			_getProductDetail() {
+				const params = {
+					id: this.$route.params.id 
+				}
+				getProductDetail(params).then((res) => {
+					if (res.message && res.message.code === 0) {
+						this.detail = res.data;
+						if (this.detail.status !== '1') {
+							if (this.$store.state.userInfo.id && this.$store.state.userInfo.id==='_a1c645a2db1147c5b9947e9bc7bd10b1') {
+								this.likeFlag = res.data.likeFlag
+								this.collectionFlag = res.data.collectionFlag
+								console.log('detail', this.detail)
+								if (res.data.adTime) this.adTime = res.data.adTime
+								if (res.data.videoUrls) {
+									let tempArray = []
+									console.log(res.data.videoUrls)
+									tempArray = res.data.videoUrls.match(/\{.*?\}/g)
+									tempArray.forEach(el => {
+										this.videoUrls.push(JSON.parse(el))
+									})
+									console.log('videoUrls', this.videoUrls)
+								}
+								this.adUrl = res.data.adUrl
+								const tempArray = res.data.secondTitle.split("-")
+								this.secondTitle = tempArray[0]
+								if(tempArray[1]) this.mainLang = tempArray[1]
+								this.synopsis = res.data.synopsis
+							} else {
+								this.$router.push('/downshelf')
+							}
+						} else {
+							this.likeFlag = res.data.likeFlag
+							this.collectionFlag = res.data.collectionFlag
+							console.log('detail', this.detail)
+							if (res.data.adTime) this.adTime = res.data.adTime
+							if (res.data.videoUrls) {
+								let tempArray = []
+								console.log(res.data.videoUrls)
+								tempArray = res.data.videoUrls.match(/\{.*?\}/g)
+								tempArray.forEach(el => {
+									this.videoUrls.push(JSON.parse(el))
+								})
+								console.log('videoUrls', this.videoUrls)
+							}
+							this.adUrl = res.data.adUrl
+							const tempArray = res.data.secondTitle.split("-")
+							this.secondTitle = tempArray[0]
+							if(tempArray[1]) this.mainLang = tempArray[1]
+							this.synopsis = res.data.synopsis
+						}
+					}
+				});
+			},
+			//  关注用户
+			_follow(type) {
+			const formData = new FormData()
+			formData.append('followUserId', this.detail.userId)
+			formData.append('type', type)
+			follow(formData).then(res => {
+				if (res.message && res.message.code === 0) {
+							this.detail.focusUserFlag = type === 1 ? true : false
+				}
+			})
+			},
+				//  收藏作品
+			_collectionProduct(type) {
+			const formData = new FormData()
+			formData.append('id', this.detail.id)
+			formData.append('type', type)
+			collectionProduct(formData).then(res => {
+				if (res.message && res.message.code === 0) {
+							this.detail.collectionFlag = type === 1 ? true : false
+				}
+			})
+			},
+			// 中间插播视频播放
+			playLoadVideo () {
+				const userVideoRef = this.$refs.userVideo
+				const loadVideoRef = this.$refs.loadVideo
+				if (this.adUrl) {
+					if (((userVideoRef.currentTime > 0.1) && this.adTime === '开始') || ((userVideoRef.currentTime > userVideoRef.duration / 2) && this.adTime === '中间') || ((userVideoRef.currentTime > userVideoRef.duration - 0.1) && this.adTime === '结尾')) {
+						userVideoRef.pause() // 原视频暂停
+						userVideoRef.style.display = 'none' // 影藏原视频
+						loadVideoRef.style.display = 'block' // 展示插播的视频
+						setTimeout(() => {
+							loadVideoRef.play() // 播放插播的视频
+						}, 1000);
+					}
+				}
+			},
+			// 插播视频结束，继续播放原视频
+			continueUserVideo () {
+				const userVideoRef = this.$refs.userVideo
+				const loadVideoRef = this.$refs.loadVideo
+
+				loadVideoRef.style.display = 'none' // 移除插播的视频
+				userVideoRef.style.display = 'block' // 展示原视频
+				userVideoRef.removeEventListener('timeupdate', this.playLoadVideo) // 移除原视频的监听播放插播视频事件
+				userVideoRef.play() // 原视频继续播放
+			},
+			// 获取视频评论
+			async onComments () {
+				const { data } = await getComments(this.detail.id)
+				console.log('comments', data)
+				this.comments = data.list
+			},
+			// 发表评论
+			async onSendComment () {
+				await sendComment({
+					productId: this.detail.id,
+					content: this.commentContent
+				})
+				const { data } = await getComments(this.detail.id)
+				this.comments = data.list
+				this.commentContent = ''
+			}
+	},
+	mounted () {
+		this._getProductDetail()
+		const userVideoRef = this.$refs.userVideo
+		const loadVideoRef = this.$refs.loadVideo
+
+		userVideoRef.addEventListener('timeupdate', this.playLoadVideo)
+		userVideoRef.onended = () => {
+			userVideoRef.addEventListener('timeupdate', this.playLoadVideo)
+		}
+		loadVideoRef.onended = this.continueUserVideo
+
+		setTimeout(() => {
+			this.onComments() // 载入视频评论
+		}, 500)
+	}
+}
+</script>
+
+<style lang="less">
+.work-detail {
+	height: 100%;
+	max-width: 100%!important;
+	text-align: left;
+	margin: 0!important;
+	background: #fff;
+	.detail-body-wrapper {
+		display: flex;
+    max-width: 1000px;
+    margin: 0 auto;		
+    padding-bottom: 20
+	}
+	.detail-body {
+		width: 778px;
+		background: #fff;
+		padding-top: 50px;
+		margin-bottom: 200px;
+		.detail-title {
+			font-size: 34px;
+			font-weight: 600;
+			color: #333333;
+			margin-bottom: 32px;
+		}
+		.detail-info {
+			font-size: 14px;
+			font-weight: 400;
+			color: #999999;
+			margin-bottom: 40px;
+			.detail-info-item {
+				margin-right: 20px;
+			}
+		}
+		.detail-content {
+			font-size: 16px;
+			font-family: Microsoft YaHei;
+			font-weight: 400;
+			color: #666666;
+			line-height: 30px;
+			margin-top: 40px;
+		}
+	}
+	.right-info {
+    padding-top: 50px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+	position: relative;
+		.user-name {
+			font-size: 16px;
+			font-weight: 600;
+			margin: 10PX 0;
+		}
+		.ant-btn {
+			margin: 8px 0;
+		}
+	}
+}
+// plus0视频框
+.plus0_wrap1 {
+	position: relative;
+	// plus0_1频道
+	.plus0_1_channel {
+		font-size: 20px;
+		color: rgb(255, 255, 255);
+		position: absolute;
+		top: 15px;
+		left: 15px;
+	}
+	// plus0_2_视频简介
+	.plus0_2_synopsis {
+		font-size: 20px;
+		color: rgb(228, 224, 224);
+		position: absolute;
+		bottom: 30px;
+		margin-left: 50%;
+		transform: translateX(-50%);
+	}
+	// plus0_3_语言切换
+	.plus0_3_langChoose {
+		outline: none;
+		position: absolute;
+		top: 40px;
+		left: 19px;
+		select {
+			opacity: 0.5;
+			outline: none;
+			border-radius: 5px;
+			font-size: 12px;
+		}
+	}
+}
+// plus1评论区
+.plus1_wrap {
+	margin-top: 30px;
+	// plus1_1_发表评论,只有登录才显示
+	.plus1_1_warp {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		// plus_1_1_1_用户头像
+		.plus_1_1_1__wrap {
+			width: 50px;
+			height: 50px;
+			border-radius: 25px;
+			overflow: hidden;
+			img {
+				width: 100%;
+				height: 100%;
+			}
+		}
+		// plus_1_1_2_写评论区
+		.plus_1_1_2_write {
+			font-size: 12px;
+			background-color: #f4f5f7;
+			padding: 5px 10px;
+			border: none;
+			border-radius: 5px;
+			outline-width: 1px;
+			outline-color: #00888b;
+		}
+		// plus_1_1_3_发表评论按钮
+		.plus_1_1_3_button {
+			width: 65px;
+			height: 65px;
+			background-color: #00888b;
+			padding: 4px 10px;
+			color: #fff;
+			outline: none;
+			border: none;
+			border-radius: 5px;
+		}
+	}
+	// plus1_2_评论列表
+	.plus1_2_item {
+		margin-top: 30px;
+		padding-bottom: 20px;
+		border-bottom: 1px solid #ccc;
+	}
+}
+
+</style>
