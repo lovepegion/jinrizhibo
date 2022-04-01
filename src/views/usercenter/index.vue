@@ -1,0 +1,213 @@
+<template>
+  <div class="usercenter">
+    <div class="left-side">
+			<div class="left-side-box">
+				<div class="user-info-box">
+					<img :src="'/webfile' + userInfo.headImage" alt="avatar" class="avatar">
+					<div class="user-name">{{ userInfo.nickname }}</div>
+					<div class="user-info">关注：{{ count.followCount }} | 粉丝：{{ count.fansCount }}</div>
+				</div>
+				<div class="user-navs">
+					<div v-for="(item, index) in navs" :key="index" class="nav-item" :class="{'nav-item-active': activeNav === index}" @click="checkNav(index)">
+						<i class="nav-icon" :style="{backgroundImage: `url(${require('../../assets/icon/' + item.icon)})`}" />
+						<span class="nav-title">{{ item.title }}</span>
+					</div>
+					<!-- plus_作品审核 -->
+					<!-- <div class="nav-item" :class="{'nav-item-active': activeNav === -1}" @click="activeNav=-1" v-if="$store.state.userInfo.id==='_a1c645a2db1147c5b9947e9bc7bd10b1'">
+						<span class="iconfont icon-jurassic_audit-report plus_scrutiny"></span>
+						<span>作品审核</span>
+					</div> -->
+					<div class="nav-item" :class="{'nav-item-active': activeNav === -1}" @click="activeNav=-1" v-if="$store.state.userInfo.id==='_3eef5c9f23ce49f1ac45c34d87897598'">
+					<!-- <div class="nav-item" :class="{'nav-item-active': activeNav === -1}" @click="activeNav=-1"> -->
+						<span class="iconfont icon-jurassic_audit-report plus_scrutiny"></span>
+						<span>作品审核</span>
+					</div>
+					<div class="nav-item" :class="{'nav-item-active': activeNav === -2}" @click="activeNav=-2" v-if="$store.state.userInfo.id==='_3eef5c9f23ce49f1ac45c34d87897598'">
+					<!-- <div class="nav-item" :class="{'nav-item-active': activeNav === -2}" @click="activeNav=-2"> -->
+						<span class="iconfont icon-yonghuguanli-yonghuguanli plus_scrutiny"></span>
+						<span>用户列表</span>
+					</div>
+				</div>
+
+			</div>
+		</div>
+		<div class="body-right">
+			<product v-if="activeNav === 0" :mode="0" />
+			<product v-if="activeNav === 1" :mode="1" />
+			<attention v-if="activeNav === 2" :mode="0" @updateUserinfo="_getCount" />
+			<attention v-if="activeNav === 3" :mode="1" @updateUserinfo="_getCount" />
+			<user-data v-if="activeNav === 4" :user-info="userInfo" @updateUserinfo="_getUserInfo" />
+			<Scrutiny v-if="activeNav === -1"></Scrutiny>
+			<UserList v-if="activeNav === -2"></UserList>
+		</div>
+  </div>
+</template>
+
+<script>
+import { getUserInfo } from '@/api/user'
+import { getCount } from '@/api/make'
+import product from './product'
+import attention from './attention.vue'
+import userData from './data.vue'
+import Scrutiny from './scrutiny.vue'
+import UserList from './UserList.vue'
+
+export default {
+	components: {
+		product,
+		attention,
+		userData,
+		Scrutiny,
+		UserList
+	},
+	data() {
+		return {
+			userInfo: {
+				headImage: null,
+			},
+			count: {
+				collectionCount: 0,
+				fansCount: 0,
+				followCount: 0,
+			},
+			activeNav: 0,
+			navs: [
+				{
+					title: '作品',
+					icon: 'usercenter-zuopin.png',
+					path: 'project',
+				},
+				{
+					title: '我的收藏',
+					icon: 'usercenter-shoucang.png',
+					path: 'fav',
+				},
+				{
+					title: '我的关注',
+					icon: 'usercenter-guanzhu.png',
+					path: 'att',
+				},
+				{
+					title: '我的粉丝',
+					icon: 'usercenter-fensi.png',
+					path: 'fan',
+				},
+				{
+					title: '我的资料',
+					icon: 'usercenter-ziliao.png',
+					path: 'data',
+				},
+			]
+		}
+	},
+	mounted() {
+		this._getUserInfo()
+		this._getCount()
+	},
+	methods: {
+		checkNav(index) {
+			this.activeNav = index
+		},
+		_getUserInfo() {
+			getUserInfo().then(res => {
+				if (res.message && res.message.code === 0) {
+          this.userInfo = Object.assign({}, res.data)
+					if (this.$route.query.to) {
+						this.activeNav = Number(this.$route.query.to)
+						let newQuery = JSON.parse(JSON.stringify(this.$route.query))
+						delete newQuery.to
+						this.$router.replace({ query: newQuery })
+					}
+        }
+			})
+		},
+		//  获取某个用户关注量和粉丝数量以及收藏量
+    _getCount() {
+      const params = {
+        userId: this.$store.state.userInfo.id
+      }
+      getCount(params).then(res => {
+        if (res.message && res.message.code === 0) {
+          this.count = Object.assign({}, res.data)
+        }
+      })
+    },
+	},
+}
+</script>
+
+<style lang="less">
+.usercenter {
+	display: flex;
+	max-width: 1000px;
+	margin: 0 auto;
+	.left-side{
+		width: 160px;
+		height: 715px;
+		background: #ffffff;
+		margin: 24px 0;
+		.left-side-box {
+			.user-info-box {
+				padding: 50px 0 30px;
+				.avatar {
+					width: 80px;
+					height: 80px;
+					border-radius: 50%;
+				}
+				.user-name {
+					font-size: 14px;
+					font-weight: 600;
+					color: #333333;
+					margin: 10px 0;
+					line-height: 20px;
+				}
+				.user-info {
+					color: #999999;
+					font-size: 12px;
+					line-height: 20px;
+				}
+			}
+			.user-navs {
+				padding-bottom: 80px;
+				// plus_作品审核
+				.plus_scrutiny {
+					color: coral;
+					margin-left: 3px;
+					margin-right: 10px;
+				}
+				.nav-item {
+					font-size: 16px;
+					font-family: PingFang SC;
+					font-weight: 500;
+					color: #666666;
+					line-height: 40px;
+					text-align: left;
+					display: flex;
+					align-items: center;
+					padding-left: 30px;
+					cursor: pointer;
+					.nav-icon {
+						width: 20px;
+						height: 20px;
+						display: inline-block;
+						background-size: 100%;
+						margin-right: 10px;
+					}
+					&:hover {
+						background: #fdeff0;
+					}
+				}
+				.nav-item-active {
+					background: #fdeff0;
+					border-left: 2px solid #e4373a;
+				}
+			}
+		}
+	}
+	.body-right {
+    flex: 1;
+    background: #ffffff;
+    margin: 24px 0 24px 14px;
+	}
+}
+</style>
