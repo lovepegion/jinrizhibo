@@ -32,12 +32,13 @@
     <!-- 3_视频列表和右侧登陆显示区 -->
     <div class="product-list">
       <!-- 3_1_视频列表 -->
-      <ul
+      <!-- <ul
         class="list"
         v-scroll="handleListOnLoad"
         scroll-disabled="scrollloading"
         scroll-distance="10"
-      >
+      > -->
+      <ul class="list">
         <li class="item" v-for="item in products" :key="item.id">
           <div v-if="item.status === '1'">
             <div v-if="item.coverUrl && item.coverUrl.length < 3" class="item-card1">
@@ -163,7 +164,8 @@
             </div>
           </div>
         </li>
-        <a-empty class="list-empty" v-if="products.length === 0" />
+        <li v-if="pageFlag != 'getSearchList'" style="width:100%;textAlign:center"><a-pagination v-model="pageNumber" :total="total" @change="onPageChange" :pageSize="pageSize" /></li>
+        <!-- <a-empty class="list-empty" v-if="products.length === 0" /> -->
       </ul>
       <!-- 3_2_右侧登陆显示 -->
       <div class="right-container">
@@ -249,7 +251,7 @@ export default {
       choosedCompany: '', // 当前选择的企业频道
       isSearching: false, // 12月1日添加，正在搜索
       inputSearchKey: '', // 12月1日添加，搜索关键词
-      companyworks: [], // 公司作品列表 
+      // companyworks: [], // 公司作品列表 
       searchToggle: false, // 搜索切换控制
       playbase: videoPlayUrl, // 线上播放基准地址
       baseUrl: process.env.VUE_APP_ZB_DOMAIN_FILE,
@@ -264,7 +266,9 @@ export default {
       activeChannelIndex: 0,
       activeCompanyIndex: -1,
       pageNumber: 1,
-      pageSize: 20,
+      pageSize: 10,
+      total: 0,
+      pageFlag: 'onRecommand', //当前处于哪个页面，用于分页请求不同链接
       searchKey: '',
       companys: [],
       products: [], // 主页左侧展示的视频列表
@@ -306,11 +310,13 @@ export default {
     // 12月2日添加-获取智播推荐列表
     async onRecommend () {
       this.setChoosedCompany('')
+      this.pageFlag = 'onRecommand'
       this.isSearching = false
       this.products = []
       this.activeChannelIndex = 0
       this.companys = []
-      const { data } = await getRecommend()
+      const { data } = await getRecommend({ pageNumber: this.pageNumber, pageSize: this.pageSize })
+      this.total = data.total
       this.products = [...data.list]
     },
     // 12月1日添加-根据搜索结果的id，搜集作品信息，赋值给products
@@ -329,6 +335,14 @@ export default {
       } else {
         this.products = []
       }
+      this.pageFlag = 'getSearchList'
+    },
+    async onPageChange () {
+      let res
+      if (this.pageFlag === 'onRecommand') res = await getRecommend({pageNumber: this.pageNumber, pageSize: this.pageSize})
+      else if (this.pageFlag === 'checkChannel') res = await this._getProductByPage()
+      this.total = res.data.total
+      this.products = res.data.list
     },
     // 列表滚动加载
     handleListOnLoad() {
@@ -339,6 +353,7 @@ export default {
     },
     checkChannel(index) {
       this.setChoosedCompany('')
+      this.pageFlag = 'checkChannel'
       this.isSearching = false // 12月1日添加，不在关键词搜索
       if (index < 10) {
         this.activeChannelIndex = index
@@ -354,12 +369,16 @@ export default {
       this._getChannelCompany()
       this._getProductByPage()
     },
-    checkCompany(index, choosedCompany) {
+    async checkCompany(index, choosedCompany) {
       this.setChoosedCompany(choosedCompany)
+      this.pageNumber = 1
       if (index < 20) {
         this.activeCompanyIndex = index
-        if (index === -1) this.products = this.allWorks
-        else this.products = this.companyworks[index].works
+        if (index === -1) this.searchKey = ''
+        else if (choosedCompany === '合肥柯锐') this.searchKey = '合肥柯锐机房设备'
+        else this.searchKey = choosedCompany
+        // else this.products = this.companyworks[index].works
+        this._getProductByPage()
       } else {
         [this.companys[index], this.companys[19]] = [this.companys[19], this.companys[index]]
         this.activeCompanyIndex = 19
@@ -375,16 +394,24 @@ export default {
     },
     //  跳转详情
     toDetail(id) {
-      this.$router.push(`/product/detail/${id}`)
+      // this.$router.push(`/product/detail/${id}`)
+      let routeData = this.$router.resolve({path: `/product/detail/${id}`})
+      window.open(routeData.href, '_blank')
     },
     toLogin(id) {
-      this.$router.push(`/user/login`)
+      // this.$router.push(`/user/login`)
+      let routeData = this.$router.resolve({path: `/user/login`})
+      window.open(routeData.href, '_blank')
     },
     toUsercenter() {
-      this.$router.push(`/usercenter`)
+      // this.$router.push(`/usercenter`)
+      let routeData = this.$router.resolve({path: `/usercenter`})
+      window.open(routeData.href, '_blank')
     },
     toOneUsercenter(val) {
-      this.$router.push(`/usercenter?to=${val}`)
+      // this.$router.push(`/usercenter?to=${val}`)
+      let routeData = this.$router.resolve({path: `/usercenter?to=${val}`})
+      window.open(routeData.href, '_blank')
     },
     _getHotSearchData() {
       /* getHotSearchData().then(res => {
@@ -416,8 +443,9 @@ export default {
             this._getChannelCompany()
             // this._getProductByPage()
             // 12月2日添加-获取新的智播推荐
-            const { data } = await getRecommend()
+            const { data } = await getRecommend({pageNumber: this.pageNumber, pageSize: this.pageSize})
             this.products = data.list
+            this.total = data.total
           }
         }
     },
@@ -460,20 +488,21 @@ export default {
       }
       getProductByPage(params).then(res => {
         if (res.message && res.message.code === 0) {
+          this.total = res.data.total
           this.products = res.data.list
-          this.allWorks = res.data.list
+          // this.allWorks = res.data.list
           // console.log('vedio', this.allWorks)
-          this.allWorks.forEach(item => {
-            if (item.secondTitle) {
-              const tempArray = item.secondTitle.split("-")
-              // console.log('tempArray46546', tempArray)
-              // console.log('companyworks', this.companyworks)
-              this.companyworks.forEach(el => {
-                if (el.company === tempArray[2]) el.works.push(item)
-                return
-              })
-            }
-          })
+          // this.allWorks.forEach(item => {
+          //   if (item.secondTitle) {
+          //     const tempArray = item.secondTitle.split("-")
+          //     // console.log('tempArray46546', tempArray)
+          //     // console.log('companyworks', this.companyworks)
+          //     this.companyworks.forEach(el => {
+          //       if (el.company === tempArray[2]) el.works.push(item)
+          //       return
+          //     })
+          //   }
+          // })
         }
       })
     },

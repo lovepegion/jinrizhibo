@@ -51,8 +51,8 @@ export function updateRecommend (id, status, data='') {
 }
 
 // 12月2日添加，获取智播推荐列表
-export function getRecommend (currentPage=1, pageSize=999) {
-  const url = `/web/vip/business/api/channel/v1/getRecommend?currentPage=${currentPage}&pageSize=${pageSize}`
+export function getRecommend (params) {
+  const url = `/web/vip/business/api/channel/v1/getRecommend?pageNumber=${params.pageNumber}&pageSize=${params.pageSize}`
   return get(url).then((res) => {
     return Promise.resolve(res)
   })
