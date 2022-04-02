@@ -311,6 +311,7 @@ export default {
     async onRecommend () {
       this.setChoosedCompany('')
       this.pageFlag = 'onRecommand'
+      this.pageNumber = 1
       this.isSearching = false
       this.products = []
       this.activeChannelIndex = 0
