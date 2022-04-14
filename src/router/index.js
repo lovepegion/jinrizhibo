@@ -20,8 +20,26 @@ const routes = [
         meta: { requiresAuth: true }
       },
       {
+        path: 'albummake',
+        component: () => import('@/views/works/AlbumMake.vue'),
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'albumupdate/:albumId',
+        component: () => import('@/views/works/AlbumUpdate.vue'),
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'detail/:id/:isAlbum/:albumId/:playIndex',
+        component: () => import('@/views/works/detail'),
+      },
+      {
         path: 'detail/:id',
         component: () => import('@/views/works/detail'),
+      },
+      {
+        path: 'albumdetail/:id',
+        component: () => import('@/views/works/AlbumDetail'),
       },
     ],
   },

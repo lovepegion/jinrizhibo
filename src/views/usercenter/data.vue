@@ -21,6 +21,13 @@
             <a-input v-model="levelText" disabled />
           </a-form-model-item>
         </a-form-model>
+        <div class="product-auth" v-if="!this.$store.state.userInfo.company">
+          <div class="product-title">视频制作权限:</div>
+          <div class="product-expire">
+            <span>月卡期限：<span>{{memberExpire}}</span></span>
+            <span>次卡剩余：{{$store.state.userInfo.publishTime}}次</span>
+          </div>
+        </div>
       </a-tab-pane>
       <a-tab-pane :key="2" tab="单位资料">
         <div v-if="userInfo.checkFlag == '0'" class="company-cert-none">
@@ -107,6 +114,13 @@ export default {
     }
   },
   computed: {
+    memberExpire () {
+      if (this.$store.state.userInfo.memberExpire) {
+        const d = new Date(this.$store.state.userInfo.memberExpire)
+        return d.toLocaleString()
+      }
+      return '您未充值月卡!'
+    },
     levelText: function() {
       switch (this.userInfo.level) {
         case '1': 
@@ -339,6 +353,20 @@ export default {
     font-size: 16px;
     line-height: 50px;
     font-weight: 600;
+  }
+  .product-auth {
+    width: 500px;
+    display: flex;
+    justify-content: space-between;
+    .product-title {
+      flex: 1;
+      color: #000000D9;
+    }
+    .product-expire {
+      flex: 3;
+      display: flex;
+      justify-content: space-between;
+    }
   }
   .edit-btn {margin-left: 10px; font-size: 16px;}
   .company-cert-none {

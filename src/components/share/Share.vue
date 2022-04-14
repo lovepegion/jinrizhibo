@@ -40,10 +40,10 @@ import QRCode from 'qrcodejs2'
 export default {
     name: 'Share',
     components: { Apiitem },
-    props: ['videoUrl', 'title', 'videoId'],
+    props: ['videoUrl', 'title', 'videoId', 'isAlbum'],
     data () {
         return {
-            playUrl: videoPlayUrl + this.videoId,
+            playUrl: this.isAlbum ? videoPlayUrl + 'albumdetail/' + this.videoId : videoPlayUrl + 'detail/' + this.videoId,
             shareApis: [
                 { title: 'QQ', url: 'http://connect.qq.com/widget/shareqq/index.html', iconClass: 'icon-QQ' },
                 { title: 'QQ空间', url: 'http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey', iconClass: 'icon-QQkongjian' },

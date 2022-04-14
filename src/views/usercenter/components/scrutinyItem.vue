@@ -3,9 +3,8 @@
     <div v-if="item.coverUrl && item.coverUrl.length < 3" class="item-card1">
       <!-- 3_1_1左侧封面 -->
       <div class="item-image-container">
-        <!-- <div class="item-image" alt="cover" :style="{backgroundImage: 'url(' + '/webfile' + item.coverUrl[0] + ')'}" /> -->
         <div class="item-image" alt="cover">
-          <a :href="playbase + item.id" target="_blank"><img :src="'/webfile' + item.coverUrl[0]"></a>
+          <a :href="playbase + item.id" target="_blank"><img :src="(item.coverUrl[0].indexOf('http') != -1) ? item.coverUrl[0] : ('/webfile' + item.coverUrl[0])"></a>
         </div>
         <i class="inner-play"></i>
       </div>
@@ -85,6 +84,7 @@
           <button v-else class="cursorItem" @click="onUpdateRecommend(item.id, 1)">开启推荐</button>
           <button v-if="isTopped" class="cursorItem" @click="onUpdateTop(0)">取消置顶</button>
           <button v-else class="cursorItem" @click="onUpdateTop(1)">开启置顶</button>
+          <button class="cursorItem" @click="onDel">删除视频</button>
           <!-- plus视频插入进度显示 -->
           <div class="plus_updating">
             <a-button type="primary" :loading="updating" v-if="updating">{{ '操作中,稍后...' }}</a-button>
@@ -98,9 +98,9 @@
         <!-- <div class="item-image" alt="cover" :style="{backgroundImage: 'url(' + '/webfile' + item.coverUrl[0] + ')'}" />
         <div class="item-image" alt="cover" :style="{backgroundImage: 'url(' + '/webfile' + item.coverUrl[1] + ')'}" />
         <div class="item-image" alt="cover" :style="{backgroundImage: 'url(' + '/webfile' + item.coverUrl[2] + ')'}" /> -->
-        <a :href="playbase + item.id" target="_blank"><img :src="'/webfile' + item.coverUrl[0]"></a>
-        <a :href="playbase + item.id" target="_blank"><img :src="'/webfile' + item.coverUrl[1]"></a>
-        <a :href="playbase + item.id" target="_blank"><img :src="'/webfile' + item.coverUrl[2]"></a>
+        <a :href="playbase + item.id" target="_blank"><img :src="(item.coverUrl[0].indexOf('http') != -1) ? item.coverUrl[0] : ('/webfile' + item.coverUrl[0])"></a>
+        <a :href="playbase + item.id" target="_blank"><img :src="(item.coverUrl[1].indexOf('http') != -1) ? item.coverUrl[1] : ('/webfile' + item.coverUrl[1])"></a>
+        <a :href="playbase + item.id" target="_blank"><img :src="(item.coverUrl[2].indexOf('http') != -1) ? item.coverUrl[2] : ('/webfile' + item.coverUrl[2])"></a>
       </div>
       <div class="item-content-info">
         <span style="margin-right: 20px;">{{ item.nickname }}</span>
@@ -163,6 +163,7 @@
           <button v-else class="cursorItem" @click="onUpdateRecommend(item.id, 1)">开启推荐</button>
           <button v-if="isTopped" class="cursorItem" @click="onUpdateTop(0)">取消置顶</button>
           <button v-else class="cursorItem" @click="onUpdateTop(1)">开启置顶</button>
+          <button class="cursorItem" @click="onDel">删除视频</button>
           <!-- plus视频插入进度显示 -->
           <div class="plus_updating">
             <a-button type="primary" :loading="updating" v-if="updating">{{ '操作中,稍后...' }}</a-button>
@@ -175,7 +176,7 @@
 
 <script>
 import { videoPlayUrl } from '@/api/visit_base_url.js'
-import { upShelf, downShelf, updateRecommend, updateTopProduct } from '@/api/update.js'
+import { upShelf, downShelf, updateRecommend, updateTopProduct, deleteWork } from '@/api/update.js'
 export default {
   name: 'ScrutinyItem',
   props: ['item'],
@@ -189,6 +190,14 @@ export default {
     }
   },
   methods: {
+    async onDel () {
+      let check = confirm("确认删除该视频吗？")
+      if (check) {
+        await deleteWork (this.item.id)
+        this.$emit('deleteFresh')
+      }
+      return
+    },
     //置顶或取消置顶
     async onUpdateTop (status) {
       this.isTopped = !this.isTopped
@@ -335,6 +344,7 @@ export default {
       align-items: center;
       color: #999999;
       margin-top: 40px;
+      width: 700px;
       position: relative;
       .plus_updating { // 操作进度显示
         position: absolute;
@@ -432,7 +442,8 @@ export default {
         right: -150px;
       }
       .t314a_status {
-        margin-right: 40px;
+        margin-right: 10px;
+        width: 270px;
         .t314a_status_item { // 状态的每一项
           padding: 5px;
           color: #FFFFFF;
@@ -441,7 +452,7 @@ export default {
       }
       .cursorItem {
         cursor: pointer;
-        margin-right: 20px;
+        margin-right: 10px;
       }
     }
   }

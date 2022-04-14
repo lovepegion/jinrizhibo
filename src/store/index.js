@@ -32,6 +32,10 @@ export const store = new Vuex.Store({
     // 12月7日添加，设置选择的企业频道
     SET_CHOOSED_COMPANY_CHANNEL(state, companychannel) {
       state.choosedCompanyChannel = companychannel
+    },
+    // 模拟
+    ADD_ALBUM (state, albumObj) {
+      state.albums.push(albumObj)
     }
   },
   actions: {
@@ -44,6 +48,10 @@ export const store = new Vuex.Store({
       })
       // Reset the cancelTokens store
       context.commit('CLEAR_CANCEL_TOKENS');
+    },
+    // 模拟
+    addAlbum (context, albumObj) {
+      context.commit('ADD_ALBUM', albumObj)
     }
   },
   getters: {

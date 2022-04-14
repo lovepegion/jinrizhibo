@@ -1,11 +1,66 @@
 <template>
   <div class="login">
     <div v-if="!isPhone" class="login-left">
-      <img :src="logoLeft" alt="">
+      <img :src="logoLeft" alt="" v-if="loginActive===1">
+      <img :src="require('../../assets/image/bg.png')" v-if="loginActive===2">
     </div>
-    <div class="login-right">
-      <h2 class="login-header">欢迎登录</h2>
-      <a-form-model ref="form" :model="form" class="user-form" @submit="handleSubmit" @submit.native.prevent :rules="rules">
+    <div class="login-right" :class="{'company-bg': loginActive===2}">
+      <div class="login-in">
+        <div class="login-header">欢迎登录</div>
+        <div class="login-dif">
+          <div class="login-box" :class="{active:loginActive===1}" @click="toPersonal()">个人用户</div>
+          <div class="login-box" :class="{active:loginActive===2}" style="borderRight:none" @click="toCompany()">企业用户</div>
+        </div>
+      </div>
+      <!-- 个人登录 -->
+      <a-form-model v-if="loginWay===0" ref="form" :model="form" class="user-form" @submit="handleSubmit" @submit.native.prevent :rules="rules">
+        <a-form-model-item prop="phoneNumber">
+          <div class="form-item">
+            <span class="input-title">手机号: </span>
+            <input class="input-self" type="text" v-model="form.phoneNumber" placeholder="请输入手机号码">
+          </div>
+        </a-form-model-item>
+        <a-form-model-item prop="password" v-if="mode === 1">
+          <div class="form-item">
+            <span class="input-title">密码: </span>
+            <input class="input-self" type="password" v-model="form.password" placeholder="请输入登录密码">
+          </div>
+        </a-form-model-item>
+        <a-form-model-item prop="smsCode" v-if="mode === 2">
+          <div class="form-item">
+            <span class="input-title">验证码: </span>
+            <input class="input-self" type="password" v-model="form.smsCode" placeholder="请输入验证码">
+            <div class="sms-box">
+              <div v-if="!countdowning" class="sms-code" :class="{'sms-code-count': smsAbled}" @click="getSmsCode">获取验证码</div>
+              <count-down v-else @doneCountdown="doneCountdown" class="sms-code sms-code-count" />
+            </div>
+          </div>
+        </a-form-model-item>
+        <a-form-model-item>
+          <div class="form-inline">
+            <a-checkbox v-model="form.check">下次自动登录</a-checkbox>
+            <a @click="toResetPWD">忘记密码</a>
+          </div>
+        </a-form-model-item>
+        <a-form-model-item>
+          <a-button
+            type="primary"
+            html-type="submit"
+            :disabled="form.phoneNumber === ''"
+            class="submit-btn"
+          >
+            登录
+          </a-button>
+        </a-form-model-item>
+        <a-form-model-item>
+          <div class="form-inline">
+            <a @click="toRegister" class="form-inline-link">免费注册</a>
+            <a @click="checkMode" class="form-inline-link">{{ mode === 1 ? '验证码登录' : '密码登录' }}</a>
+          </div>
+        </a-form-model-item>
+      </a-form-model>
+      <!-- 企业登录 -->
+      <a-form-model v-if="loginWay===1" ref="form" :model="form" class="user-form" @submit="handleSubmit" @submit.native.prevent :rules="rules">
         <a-form-model-item prop="phoneNumber">
           <a-input v-model="form.phoneNumber" placeholder="请输入手机号码">
             <a-icon slot="prefix" type="mobile" style="color:rgba(0,0,0,.25)" />
@@ -32,19 +87,16 @@
           </div>
         </a-form-model-item>
         <a-form-model-item>
-          <a-button
-            type="primary"
-            html-type="submit"
-            :disabled="form.phoneNumber === ''"
-            class="submit-btn"
-          >
-            登录
-          </a-button>
-        </a-form-model-item>
-        <a-form-model-item>
           <div class="form-inline">
-            <a @click="toRegister" class="form-inline-link">免费注册</a>
-            <a @click="checkMode" class="form-inline-link">{{ mode === 1 ? '验证码登录' : '密码登录' }}</a>
+            <a-button
+              type="primary"
+              html-type="submit"
+              :disabled="form.phoneNumber === ''"
+              class="submit-btn"
+            >
+              登录
+            </a-button>
+            <a-button @click="checkMode" class="form-inline-link">{{ mode === 1 ? '验证码登录' : '密码登录' }}</a-button>
           </div>
         </a-form-model-item>
       </a-form-model>
@@ -54,11 +106,12 @@
 
 <script>
 import { RSAKEY, encryptedString } from '@/utils/ras'
-import { sms, pwdLogin, smsLogin } from '@/api/user'
+import { sms, pwdLogin, smsLogin, getUserInfo } from '@/api/user'
 import logoLeft from '@/assets/image/login-left.png'
 import CountDown from '@/components/utils/CountDown'
 import { mapMutations } from 'vuex'
 export default {
+  name: 'Login',
   components: {
     CountDown
   },
@@ -88,6 +141,8 @@ export default {
       }
     }
     return {
+      loginWay: 0, //0是个人登录，1是企业登录
+      loginActive: 1,
       isPhone: false,
       logoLeft,
       form: {
@@ -118,6 +173,22 @@ export default {
     }
   },
   methods: {
+    initForm () {
+      this.$set(this.form, 'phoneNumber', '')
+      this.$set(this.form, 'smsCode', '')
+      this.$set(this.form, 'password', '')
+      this.$set(this.form, 'check', true)
+    },
+    toPersonal () {
+      this.loginWay = 0
+      this.loginActive = 1
+      this.initForm()
+    },
+    toCompany () {
+      this.loginWay = 1
+      this.loginActive = 2
+      this.initForm()
+    },
     handleSubmit() {
       this.$refs.form.validate(valid => {
         if (valid) {
@@ -132,8 +203,16 @@ export default {
           }
           apiMethod(data).then(res => {
             if (res.message && res.message.code === 0) {
-              this.$message.success('登录成功')
               this.setUserInfo(res.data)
+              if (this.loginWay === 0 && this.$store.state.userInfo.company) {
+                this.$warning({title: '您不是个人用户，请选择企业用户登录!'})
+                return
+              } else if (this.loginWay === 1 && !this.$store.state.userInfo.company) {
+                this.$warning({title: '您不是企业用户，请选择个人用户登录!'})
+                return
+              }
+              this.$message.success('登录成功')
+              getUserInfo().then(userres => this.setUserInfo({...res.data, ...userres.data}))
               if(this.$route.query && this.$route.query.pathname) this.$router.push(this.$route.query.pathname)
               else this.$router.push('/')
             } else if (res.message && res.message.code!== 0) {
@@ -205,6 +284,8 @@ export default {
   margin: 0 auto;
   .login-left {
     img {
+      border-top-left-radius: 20px;
+      border-bottom-left-radius: 20px;
       width: 441px;
       height: 512px;
     }
@@ -215,19 +296,86 @@ export default {
     display: flex;
     flex-direction: column;
     justify-content: center;
-    .login-header {
-      font-size: 30px;
-      font-weight: 600;
-      color: #333333;
-      opacity: 0.9;
-      margin-bottom: 40px;
+    .form-item {
+      margin-left: 30px;
+      width: 380px;
+      position: relative;
+      display: flex;
+      justify-content: space-between;
+      .sms-box {
+        height: 40px;
+        line-height: 40px;
+        position: absolute;
+        top: 2px;
+        right: 0;
+        .sms-code {
+          padding: 0 20px;
+          border-radius: 5px;
+          height: 40px;
+          line-height: 40px;
+        }
+      }
+      .input-title {
+        font-size: 14px;
+        color: #212121;
+      }
+      .input-self {
+        width: 300px;
+        padding-left: 10px;
+        outline: none;
+        border: 1px solid #ccc;
+        border-radius: 10px;
+      }
+      .input-self::-webkit-input-placeholder {
+        color: #ccc;
+      }
+    }
+    .login-in {
+      display: flex;
+      .login-header {
+        flex: 1;
+        font-size: 30px;
+        font-weight: 600;
+        color: #333333;
+        opacity: 0.9;
+        margin-bottom: 40px;
+      }
+      .login-dif {
+        flex: 1;
+        margin-bottom: 40px;
+        display: flex;
+        justify-content: center;
+        .active {
+          background-color: rgb(240, 239, 239);
+        }
+        .login-box {
+          border-top-left-radius: 5px;
+          border-top-right-radius: 5px;
+          width: 100px;
+          height: 35px;
+          line-height: 40px;
+          border: 1px solid #ccc;
+          border-top: none;
+          border-left: none;
+        }
+        .login-box:hover {
+          cursor: pointer;
+          border-bottom: 3px solid goldenrod;
+        }
+      }
     }
     .form-inline {
       display: flex;
       justify-content: space-between;
+      .submit-btn {
+        border-radius: 5px;
+      }
     }
     .form-inline-link {
       color: #A9A9A9;
+      border-radius: 5px;
+      height: 42px;
+      margin-left: 10px;
     }
   }
 }

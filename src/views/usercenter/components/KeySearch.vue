@@ -130,7 +130,7 @@ export default {
       })
     },
     onSearch(val) {
-      console.log('onSearch')
+      // console.log('onSearch')
       this.dataSource = []
       this.searchKey = val
       this._getProductTitleByKeyWord()
@@ -142,9 +142,9 @@ export default {
         pageSize: 100,
         keyWord: this.searchKey.trim(),
       }
-      console.log('paramskey', params.keyWord)
+      // console.log('paramskey', params.keyWord)
       getProductTitleByKeyWord(params).then(res => {
-        console.log('keysearch', res)
+        // console.log('keysearch', res)
         if (res.message && res.message.code === 0) {
           this.dataSource = []
           this.dataSource = [...res.data.list]

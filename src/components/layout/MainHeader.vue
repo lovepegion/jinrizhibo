@@ -185,7 +185,7 @@ export default {
     .plus0_bordcast {
       position: absolute;
       top: 38px;
-      left: 480px;
+      left: 310px;
     }
     .header-logo {
       width: 210px;

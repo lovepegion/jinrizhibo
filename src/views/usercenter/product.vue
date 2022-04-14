@@ -1,16 +1,19 @@
 <template>
   <div class="usercenter-product">
+    <ul>
+      <UserAlbumItem v-for="album in albumList" :album="album" :key="album.id"></UserAlbumItem>
+    </ul>
     <ul class="list">
       <li class="item" v-for="item in list" :key="item.id">
         <div v-if="item.coverUrl && item.coverUrl.length < 3" class="item-card1">
           <!-- 通过审核 -->
           <div v-if="item.status==='1'" class="item-image-container imgcursor"  @click="toDetail(item.id)">
-            <div class="item-image" alt="cover" :style="{backgroundImage: 'url(' + '/webfile' + item.coverUrl[0] + ')'}" />
+            <div class="item-image" alt="cover" :style="{backgroundImage: (item.coverUrl[0].indexOf('http') != -1) ? 'url(' + item.coverUrl[0] + ')' : 'url(' + '/webfile' + item.coverUrl[0] + ')'}" />
             <i class="inner-play"></i>
           </div>
           <!-- 待审核 -->
           <div v-if="item.status==='3'" class="item-image-container">
-            <div class="item-image" alt="cover" :style="{backgroundImage: 'url(' + '/webfile' + item.coverUrl[0] + ')'}" />
+            <div class="item-image" alt="cover" :style="{backgroundImage: (item.coverUrl[0].indexOf('http') != -1) ? 'url(' + item.coverUrl[0] + ')' : 'url(' + '/webfile' + item.coverUrl[0] + ')'}" />
             <i class="inner-play"></i>
             <div class="item-image waitingcheck_wrap">已下架,请联系管理员...</div>
           </div>
@@ -28,9 +31,9 @@
         <div v-else class="item-card2">
           <div class="item-content-title">{{ item.title }}</div>
           <div v-if="item.coverUrl && (item.coverUrl.length === 3 || item.coverUrl.length === 4)" class="item-images">
-            <div @click="toDetail(item.id)" class="item-image" alt="cover" :style="{backgroundImage: 'url(' + '/webfile' + item.coverUrl[0] + ')'}" />
-            <div @click="toDetail(item.id)" class="item-image" alt="cover" :style="{backgroundImage: 'url(' + '/webfile' + item.coverUrl[1] + ')'}" />
-            <div @click="toDetail(item.id)" class="item-image" alt="cover" :style="{backgroundImage: 'url(' + '/webfile' + item.coverUrl[2] + ')'}" />
+            <div @click="toDetail(item.id)" class="item-image" alt="cover" :style="{backgroundImage: (item.coverUrl[0].indexOf('http') != -1) ? 'url(' + item.coverUrl[0] + ')' : 'url(' + '/webfile' + item.coverUrl[0] + ')'}" />
+            <div @click="toDetail(item.id)" class="item-image" alt="cover" :style="{backgroundImage: (item.coverUrl[0].indexOf('http') != -1) ? 'url(' + item.coverUrl[0] + ')' : 'url(' + '/webfile' + item.coverUrl[0] + ')'}" />
+            <div @click="toDetail(item.id)" class="item-image" alt="cover" :style="{backgroundImage: (item.coverUrl[0].indexOf('http') != -1) ? 'url(' + item.coverUrl[0] + ')' : 'url(' + '/webfile' + item.coverUrl[0] + ')'}" />
             <div v-if="item.status==='3'" class="item-image waitingcheck_wrap">已下架,请联系管理员...</div>
           </div>
           <div class="item-content-info">
@@ -52,7 +55,11 @@
 <script>
 import { getProductByUserId, getProductByCollectionUserId } from '@/api/make'
 import { deleteWork } from '@/api/update.js'
+import { getAlbumByUserId } from '@/api/album.js'
+import UserAlbumItem from '@/components/UserAlbumItem.vue'
 export default {
+  name: 'Product',
+  components: { UserAlbumItem },
   props: {
     mode: { // 0：用户作品，1：收藏作品
       type: Number,
@@ -61,6 +68,7 @@ export default {
   },
 	data() {
 		return {
+      albumList: [], //专辑列表
 			list: [],	//	作品列表
 			pageNumber: 1,
       pageSize: 4,
@@ -68,6 +76,7 @@ export default {
 		}
 	},
 	mounted() {
+    this.onGetAlbumByUserId()
     this.fetchData()
 	},
   watch: {
@@ -78,6 +87,13 @@ export default {
     }
   },
 	methods: {
+    async onGetAlbumByUserId () {
+      if (this.mode === 0 && this.$store.state.userInfo.company && this.pageNumber === 1) {
+        const res = await getAlbumByUserId(this.$store.state.userInfo.id)
+        this.albumList = res.data.list
+        console.log('useralbums', res)
+      }
+    },
     fetchData() {
       if (this.mode === 0) {
         this._getProductByUserId()
@@ -90,7 +106,9 @@ export default {
       this.$router.push(`/product/detail/${id}`)
     },
     onPageChange(pageNumber) {
+      this.albumList = []
       this.pageNumber = pageNumber
+      this.onGetAlbumByUserId()
       this.fetchData()
     },
 		//  获取用户作品列表

@@ -83,3 +83,11 @@ export function updateUserStatus (user, data='') {
     return Promise.resolve(res)
   })
 }
+
+// 修改用户信息
+export function updateUserInfo (data) {
+  const url = _baseUrl + 'updateUserInfo/'
+  return post(url, data, { headers: { 'Content-Type': 'application/json' } }).then((res) => {
+    return Promise.resolve(res)
+  })
+}

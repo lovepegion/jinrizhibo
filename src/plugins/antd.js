@@ -5,6 +5,7 @@ import {
   // Affix,
   // Anchor,
   AutoComplete,
+  Cascader,
   // Alert,
   // Avatar,
   // BackTop,
@@ -76,6 +77,7 @@ import {
 } from 'ant-design-vue'
 
 Vue.use(AutoComplete)
+Vue.use(Cascader)
 Vue.use(ConfigProvider)
 Vue.use(Row)
 Vue.use(Col)

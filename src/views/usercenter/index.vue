@@ -12,12 +12,17 @@
 						<i class="nav-icon" :style="{backgroundImage: `url(${require('../../assets/icon/' + item.icon)})`}" />
 						<span class="nav-title">{{ item.title }}</span>
 					</div>
-					<!-- plus_作品审核 -->
-					<!-- <div class="nav-item" :class="{'nav-item-active': activeNav === -1}" @click="activeNav=-1" v-if="$store.state.userInfo.id==='_a1c645a2db1147c5b9947e9bc7bd10b1'">
-						<span class="iconfont icon-jurassic_audit-report plus_scrutiny"></span>
-						<span>作品审核</span>
-					</div> -->
-					<div class="nav-item" :class="{'nav-item-active': activeNav === -1}" @click="activeNav=-1" v-if="$store.state.userInfo.id==='_3eef5c9f23ce49f1ac45c34d87897598'">
+					<div class="nav-item" :class="{'nav-item-active': activeNav === 5}" @click="activeNav=5" v-if="$store.state.userInfo.id==='_3eef5c9f23ce49f1ac45c34d87897598'">
+					<!-- <div class="nav-item" :class="{'nav-item-active': activeNav === 5}" @click="activeNav=5"> -->
+						<i class="nav-icon" :style="{backgroundImage: `url(${require('../../assets/icon/usercenter-charge.png')})`}" />
+						<span>充值记录</span>
+					</div>
+					<div class="nav-item" :class="{'nav-item-active': activeNav === 5}" @click="activeNav=5" v-if="$store.state.userInfo.id==='_3eef5c9f23ce49f1ac45c34d87897598'">
+					<!-- <div class="nav-item" :class="{'nav-item-active': activeNav === 6}" @click="activeNav=6"> -->
+						<i class="nav-icon" :style="{backgroundImage: `url(${require('../../assets/icon/usercenter-chargesetting.png')})`}" />
+						<span>充值设置</span>
+					</div>
+					<div class="nav-item" :class="{'nav-item-active': activeNav === -1}" @click="activeNav = -1" v-if="$store.state.userInfo.id==='_3eef5c9f23ce49f1ac45c34d87897598'">
 					<!-- <div class="nav-item" :class="{'nav-item-active': activeNav === -1}" @click="activeNav=-1"> -->
 						<span class="iconfont icon-jurassic_audit-report plus_scrutiny"></span>
 						<span>作品审核</span>
@@ -33,10 +38,13 @@
 		</div>
 		<div class="body-right">
 			<product v-if="activeNav === 0" :mode="0" />
+			<!-- <album v-if="activeNav === 1"></album> -->
 			<product v-if="activeNav === 1" :mode="1" />
 			<attention v-if="activeNav === 2" :mode="0" @updateUserinfo="_getCount" />
 			<attention v-if="activeNav === 3" :mode="1" @updateUserinfo="_getCount" />
 			<user-data v-if="activeNav === 4" :user-info="userInfo" @updateUserinfo="_getUserInfo" />
+			<Charge v-if="activeNav === 5"></Charge>
+			<ChargeSetting v-if="activeNav === 6"></ChargeSetting>
 			<Scrutiny v-if="activeNav === -1"></Scrutiny>
 			<UserList v-if="activeNav === -2"></UserList>
 		</div>
@@ -51,6 +59,8 @@ import attention from './attention.vue'
 import userData from './data.vue'
 import Scrutiny from './scrutiny.vue'
 import UserList from './UserList.vue'
+import Charge from './Charge.vue'
+import ChargeSetting from './ChargeSetting.vue'
 
 export default {
 	components: {
@@ -58,7 +68,9 @@ export default {
 		attention,
 		userData,
 		Scrutiny,
-		UserList
+		UserList,
+		Charge,
+		ChargeSetting
 	},
 	data() {
 		return {
@@ -77,6 +89,11 @@ export default {
 					icon: 'usercenter-zuopin.png',
 					path: 'project',
 				},
+				/* {
+					title: '专辑',
+					icon: 'usercenter-album.png',
+					path: 'album',
+				}, */
 				{
 					title: '我的收藏',
 					icon: 'usercenter-shoucang.png',
@@ -96,7 +113,17 @@ export default {
 					title: '我的资料',
 					icon: 'usercenter-ziliao.png',
 					path: 'data',
+				}
+				/* {
+					title: '充值记录',
+					icon: 'usercenter-charge.png',
+					path: 'charge',
 				},
+				{
+					title: '充值设置',
+					icon: 'usercenter-chargesetting.png',
+					path: 'chargesetting',
+				} */
 			]
 		}
 	},

@@ -39,18 +39,21 @@
         scroll-distance="10"
       > -->
       <ul class="list">
+        <li class="item" v-for="album in albums" :key="album.id">
+          <AlbumItem :album="album"></AlbumItem>
+        </li>
         <li class="item" v-for="item in products" :key="item.id">
           <div v-if="item.status === '1'">
             <div v-if="item.coverUrl && item.coverUrl.length < 3" class="item-card1">
               <!-- 3_1_1左侧封面 -->
               <div class="item-image-container" @click="toDetail(item.id)">
-                <div class="item-image" alt="cover" :style="{backgroundImage: 'url(' + '/webfile' + item.coverUrl[0] + ')'}" />
+                <div class="item-image" alt="cover" :style="{backgroundImage: (item.coverUrl[0].indexOf('http') != -1) ? 'url(' + item.coverUrl[0] + ')' : 'url(' + '/webfile' + item.coverUrl[0] + ')'}" />
                 <i class="inner-play"></i>
               </div>
               <!-- 3_1_2右侧内容 -->
               <div class="item-content">
                 <!-- 312a大标题 -->
-                <div class="item-content-title" :title="item.title" @click="toDetail(item.id)" style="cursor:pointer">{{ item.title }}</div>
+                <div class="item-content-title" :title="item.title" @click="toDetail(item.id)" style="cursor:pointer;textAlign:left">{{ item.title }}</div>
                 <!-- 312b中间label -->
                 <div class="item-content-info">
                   <span v-if="item.topDate" style="margin-right: 20px; color: #E4373A;">置顶</span>
@@ -108,9 +111,9 @@
             <div v-else class="item-card2">
               <div class="item-content-title">{{ item.title }}</div>
               <div v-if="item.coverUrl && (item.coverUrl.length === 3 || item.coverUrl.length === 4)" class="item-images">
-                <div @click="toDetail(item.id)" class="item-image" alt="cover" :style="{backgroundImage: 'url(' + '/webfile' + item.coverUrl[0] + ')'}" />
-                <div @click="toDetail(item.id)" class="item-image" alt="cover" :style="{backgroundImage: 'url(' + '/webfile' + item.coverUrl[1] + ')'}" />
-                <div @click="toDetail(item.id)" class="item-image" alt="cover" :style="{backgroundImage: 'url(' + '/webfile' + item.coverUrl[2] + ')'}" />
+                <div @click="toDetail(item.id)" class="item-image" alt="cover" :style="{backgroundImage: (item.coverUrl[0].indexOf('http') != -1) ? 'url(' + item.coverUrl[0] + ')' : 'url(' + '/webfile' + item.coverUrl[0] + ')'}" />
+                <div @click="toDetail(item.id)" class="item-image" alt="cover" :style="{backgroundImage: (item.coverUrl[1].indexOf('http') != -1) ? 'url(' + item.coverUrl[1] + ')' : 'url(' + '/webfile' + item.coverUrl[1] + ')'}" />
+                <div @click="toDetail(item.id)" class="item-image" alt="cover" :style="{backgroundImage: (item.coverUrl[2].indexOf('http') != -1) ? 'url(' + item.coverUrl[2] + ')' : 'url(' + '/webfile' + item.coverUrl[2] + ')'}" />
               </div>
               <div class="item-content-info">
                 <span style="margin-right: 20px;">{{ item.nickname }}</span>
@@ -215,7 +218,7 @@
           <ul class="t4_2_list">
             <li v-for="(item,index) in hotList.slice(0, 10)" class="t4_2_list_item" :key="index">
               <span class="t4_2_list_item_index" :class="{num1:index===0,num2:index===1,num3:index===2,num10:index===9}">{{index + 1}}</span>&nbsp;&nbsp;
-              <a :href="playbase + item.id" target="_blank" :class="{num10:index===9}"><div class="t4_2_list_item_title">{{item.title}}</div></a>
+              <a><div class="t4_2_list_item_title" :class="{num10:index===9}" @click="toDetail(item.id)">{{item.title}}</div></a>
               <span v-if="index===0||index===1||index===2" class="t4_2_list_item_after">热</span>
             </li>
           </ul>
@@ -237,17 +240,21 @@ import guanzhu from '@/assets/icon/guanzhu.png'
 import MainHeader from '@/components/layout/MainHeader.vue'
 import { getAllChannel, getProductByPage, getHotSearchData, getCount, getChannelCompany, getProductDetail } from '@/api/make'
 import { getHotSearch, getRecommend, getKeyWord } from '@/api/update.js'
+import { getAlbumBykey, getAlbumDetail } from '@/api/album.js'
 import Footer from '@/components/layout/Footer.vue'
 import StreamSaver from 'streamsaver'
+import AlbumItem from '@/components/AlbumItem.vue'
 export default {
   name: 'Main',
   components: {
     MainHeader,
     Footer,
-    Share
+    Share,
+    AlbumItem
   },
   data() {
     return {
+      albums: [], //当前专辑列表
       choosedCompany: '', // 当前选择的企业频道
       isSearching: false, // 12月1日添加，正在搜索
       inputSearchKey: '', // 12月1日添加，搜索关键词
@@ -293,7 +300,7 @@ export default {
     },
     token() {
       return this.$store.state.userInfo.token
-    },
+    }
   },
   async mounted() {
     this._getAllChannel()
@@ -339,11 +346,13 @@ export default {
       this.pageFlag = 'getSearchList'
     },
     async onPageChange () {
-      let res
-      if (this.pageFlag === 'onRecommand') res = await getRecommend({pageNumber: this.pageNumber, pageSize: this.pageSize})
-      else if (this.pageFlag === 'checkChannel') res = await this._getProductByPage()
-      this.total = res.data.total
-      this.products = res.data.list
+      this.albums = []
+      if (this.pageFlag === 'onRecommand') {
+        const commandres = await getRecommend({pageNumber: this.pageNumber, pageSize: this.pageSize})
+        this.total = commandres.data.total
+        this.products = commandres.data.list
+      } else if (this.pageFlag === 'checkChannel') this._getProductByPage()
+      if (this.pageNumber === 1) this.getAlbums()
     },
     // 列表滚动加载
     handleListOnLoad() {
@@ -353,6 +362,7 @@ export default {
       }
     },
     checkChannel(index) {
+      this.albums = []
       this.setChoosedCompany('')
       this.pageFlag = 'checkChannel'
       this.isSearching = false // 12月1日添加，不在关键词搜索
@@ -380,18 +390,21 @@ export default {
         else this.searchKey = choosedCompany
         // else this.products = this.companyworks[index].works
         this._getProductByPage()
+        this.getAlbums()
       } else {
         [this.companys[index], this.companys[19]] = [this.companys[19], this.companys[index]]
         this.activeCompanyIndex = 19
       }
-      /* this.pageNumber = 1
-      if (index !== -1) {
-        this.searchKey = this.companys[index].company
-      } else {
-        this.searchKey = ''
-      }
-      this.products = []
-      this._getProductByPage() */
+    },
+    async getAlbums () {
+      const res = await getAlbumBykey(this.searchKey)
+      this.albums = res.data.list
+      // console.log('getAlbums', res.data.list)
+      /* res.data.list.forEach(async item => {
+        let res = await getAlbumDetail({albumId: item.id, pageNumber: 1, pageSize: 999})
+        this.albums.push(res.data)
+      }) */
+      // console.log('this.albums', this.albums)
     },
     //  跳转详情
     toDetail(id) {
@@ -428,15 +441,6 @@ export default {
     },
     //  查询所有栏目列表
     async _getAllChannel() {
-      /* getAllChannel().then(async res => {
-        if (res.message && res.message.code === 0) {
-          this.channelOptions = res.data
-          if (this.channelOptions.length > 0) {
-            await this._getChannelCompany()
-            await this._getProductByPage()
-          }
-        }
-      }) */
       const res = await getAllChannel()
       if (res.message && res.message.code === 0) {
           this.channelOptions = res.data
@@ -638,7 +642,6 @@ export default {
       width: 918px;
       display: flex;
       flex-wrap: wrap;
-      overflow: auto;
       margin-bottom: 200px;
       .item {
         width: 80%;

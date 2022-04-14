@@ -19,10 +19,10 @@
     </ul>
     <ul v-else class="company-list">
       <li class="company-item company-item-first" :class="{'company-item-active': activeCompanyIndex === -1 }" @click="checkCompany(-1)">全部</li>
-      <li class="company-item" :class="{'company-item-active': activeCompanyIndex === index }" v-for="(item, index) in companys.slice(0, 20)" :key="item.id" @click="checkCompany(index)">{{ item.company }}</li>
+      <li class="company-item" :class="{'company-item-active': activeCompanyIndex === index }" v-for="(item, index) in companys.slice(0, 20)" :key="item.id" @click="checkCompany(index, item.company)">{{ item.company }}</li>
       <a-popover title="" trigger="hover" placement="bottomRight">
         <template slot="content">
-          <li class="company-item" :class="{'company-item-active': activeCompanyIndex === index+20}" v-for="(item, index) in companys.slice(20)" :key="item.id" @click.prevent="checkCompany(index+20)">{{ item.company }}</li>
+          <li class="company-item" :class="{'company-item-active': activeCompanyIndex === index+20}" v-for="(item, index) in companys.slice(20)" :key="item.id" @click.prevent="checkCompany(index+20, item.company)">{{ item.company }}</li>
         </template>
         <li class="company-item" v-if="companys.length > 20">更多</li>
       </a-popover>
@@ -37,14 +37,14 @@
         scroll-distance="10"
       >
         <li class="item" v-for="item in products" :key="item.id">
-          <ScrutinyItem :item="item" :currentChannel="currentChannel"></ScrutinyItem>
+          <ScrutinyItem :item="item" :currentChannel="currentChannel" @deleteFresh="onPageChange"></ScrutinyItem>
         </li>
         <a-empty class="list-empty" v-if="products.length === 0" />
       </ul>
       <!-- 3_2_底部页码导航 -->
       <div class="t3_2_warp">
         <div class="pagination">
-          <a-pagination v-model="checkpageNumber" :total="checktotal" @change="onPageChange" :pageSize="checkpageSize" />
+          <a-pagination v-model="pageNumber" :total="total" @change="onPageChange" :pageSize="pageSize" />
         </div>
       </div>
     </div>
@@ -53,10 +53,11 @@
 
 <script>
 // import Share from '@/components/share/Share.vue'
+import { mapMutations } from 'vuex'
 import shoucang from '@/assets/icon/shoucang.png'
 import fensi from '@/assets/icon/fensi.png'
 import guanzhu from '@/assets/icon/guanzhu.png'
-import { getAllChannel, getCount, getChannelCompany, getProductDetail } from '@/api/make'
+import { getAllChannel, getCount, getChannelCompany, getProductDetail, getProductByPage } from '@/api/make'
 import { getProductByPageWithAdmin, getRecommend, getHotSearch } from '@/api/update.js'
 import ScrutinyItem from './components/scrutinyItem.vue'
 import KeySearch from './components/KeySearch.vue'
@@ -69,9 +70,11 @@ export default {
   data () {
     return {
       isSearching: false,
-      checkpageNumber: 1, // 当前切换页
-      checkpageSize: 20,
-      checktotal: 200,
+      pageNumber: 1, // 当前切换页
+      pageSize: 20,
+      total: 10,
+      pageFlag: 'onRecommand', //当前处于哪个页面，用于分页请求不同链接
+      searchKey: '',
       currentChannel: '智播推荐', // 12月2日添加-当前频道，用于底部页码根据不同频道切换
       searchToggle: false, // 搜索切换控制
       baseUrl: process.env.VUE_APP_ZB_DOMAIN_FILE,
@@ -85,8 +88,6 @@ export default {
       channelOptions: [],
       activeChannelIndex: 0,
       activeCompanyIndex: -1,
-      pageNumber: 1,
-      // pageSize: 20,
       companys: [],
       products: [], // 主页左侧展示的视频列表
       // hotSearchList: [],
@@ -118,6 +119,7 @@ export default {
     }
   },
   methods: {
+    ...mapMutations({ setChoosedCompany: 'SET_CHOOSED_COMPANY_CHANNEL' }),
     getSearchList ({ idLists, inputSearchKey }) {
       this.activeChannelIndex = -1
       this.isSearching = true
@@ -133,78 +135,28 @@ export default {
       } else {
         this.products = []
       }
+      this.pageFlag = 'getSearchList'
     },
-    /* _getHotSearchData() {
-      getKeyWord().then(res => {
-        if (res.message && res.message.code === 0) {
-          this.hotSearchList = res.data.list
-        }
-      })
-    }, */
     // 12月2日添加-获取智播推荐列表
     async onRecommend () {
-      this.checktotal = 0
-      this.currentChannel = '智播推荐'
+      this.setChoosedCompany('')
+      this.pageFlag = 'onRecommand'
+      this.pageNumber = 1
+      this.isSearching = false
       this.products = []
       this.activeChannelIndex = 0
       this.companys = []
-      this.onPageChange()
+      const { data } = await getRecommend({ pageNumber: this.pageNumber, pageSize: this.pageSize })
+      this.total = data.total
+      this.products = [...data.list]
     },
-    // 底部页码切换
-    /* onPageChange () {
-      this.$nextTick(() => {
-        const params = {
-          pageNumber: this.checkpageNumber,
-          pageSize: this.checkpageSize,
-          channelId: this.channelOptions[this.activeChannelIndex].id,
-          keyWord: this.searchKey,
-        }
-        getProductByPageWithAdmin(params).then(res => {
-          if (res.message && res.message.code === 0) {
-            this.products = res.data.list
-            if (this.products.length < this.pageSize) {  // 发现某页数量小于20，则修改作品数量为当前数量
-              this.checktotal = this.pageSize * (this.pageNumber + 1)
-            }
-            console.log('vedio', this.products)
-          }
-        })
-      })
-    }, */
     // 12月2日更新-新的推荐列表页码切换
-    onPageChange () {
-      if (this.currentChannel === '智播推荐') {
-        this.$nextTick(() => {
-        getRecommend(this.checkpageNumber, this.checkpageSize).then(res => {
-          if (res.message && res.message.code === 0) {
-            this.products = []
-            this.products = [...res.data.list]
-            this.checktotal = res.data.total
-            /* if (this.products.length < this.checkpageSize) {  // 发现某页数量小于20，则修改作品数量为当前数量
-              this.checktotal = this.checkpageSize * this.pageNumber
-            } */
-          }
-        })
-      })
-      } else {
-        this.$nextTick(() => {
-        const params = {
-          pageNumber: this.checkpageNumber,
-          pageSize: this.checkpageSize,
-          channelId: this.channelOptions[this.activeChannelIndex].id,
-          keyWord: this.searchKey,
-        }
-        getProductByPageWithAdmin(params).then(res => {
-          if (res.message && res.message.code === 0) {
-            this.products = []
-            this.products = [...res.data.list]
-            this.checktotal = res.data.total
-            /* if (this.products.length < this.checkpageSize) {  // 发现某页数量小于20，则修改作品数量为当前数量
-              this.checktotal = this.checkpageSize * (this.pageNumber + 1)
-            } */
-          }
-        })
-      })
-      }
+    async onPageChange () {
+      if (this.pageFlag === 'onRecommand') {
+        const commandres = await getRecommend({pageNumber: this.pageNumber, pageSize: this.pageSize})
+        this.total = commandres.data.total
+        this.products = commandres.data.list
+      } else if (this.pageFlag === 'checkChannel') this._getProductByPage()
     },
     // 列表滚动加载
     handleListOnLoad() {
@@ -213,7 +165,7 @@ export default {
         this._getProductByPage()
       }
     },
-    checkChannel(index) {
+    /* checkChannel(index) {
       if (index < 10) {
         this.activeChannelIndex = index
       } else {
@@ -230,8 +182,27 @@ export default {
       this.companys = []
       this._getProductByPage()
       this._getChannelCompany()
+    }, */
+    checkChannel(index) {
+      this.albums = []
+      this.setChoosedCompany('')
+      this.pageFlag = 'checkChannel'
+      this.isSearching = false // 12月1日添加，不在关键词搜索
+      if (index < 10) {
+        this.activeChannelIndex = index
+      } else {
+        [this.channelOptions[index], this.channelOptions[9]] = [this.channelOptions[9], this.channelOptions[index]]
+        this.activeChannelIndex = 9
+      }
+      this.pageNumber = 1
+      this.activeCompanyIndex = -1
+      this.searchKey = ''
+      this.products = []
+      this.companys = []
+      this._getChannelCompany()
+      this._getProductByPage()
     },
-    checkCompany(index) {
+    /* checkCompany(index) {
       if (index < 20) {
         this.activeCompanyIndex = index
       } else {
@@ -246,6 +217,21 @@ export default {
       }
       this.products = []
       this._getProductByPage()
+    }, */
+    async checkCompany(index, choosedCompany) {
+      this.setChoosedCompany(choosedCompany)
+      this.pageNumber = 1
+      if (index < 20) {
+        this.activeCompanyIndex = index
+        if (index === -1) this.searchKey = ''
+        else if (choosedCompany === '合肥柯锐') this.searchKey = '合肥柯锐机房设备'
+        else this.searchKey = choosedCompany
+        // else this.products = this.companyworks[index].works
+        this._getProductByPage()
+      } else {
+        [this.companys[index], this.companys[19]] = [this.companys[19], this.companys[index]]
+        this.activeCompanyIndex = 19
+      }
     },
     //  跳转详情
     toDetail(id) {
@@ -264,22 +250,16 @@ export default {
     async _getAllChannel() {
       const res = await getAllChannel()
       if (res.message && res.message.code === 0) {
-        this.channelOptions = res.data
-        if (this.channelOptions.length > 0) {
-          this._getChannelCompany()
-          // this._getProductByPage()
-          // 12月2日添加-获取新的智播推荐
-          const myres = await getRecommend()
-          if (myres.message && myres.message.code === 0) {
-            this.products = []
-            this.products = [...myres.data.list]
-            this.checktotal = myres.data.total
-            /* if (this.products.length < this.checkpageSize) {  // 发现某页数量小于20，则修改作品数量为当前数量
-              this.checktotal = this.checkpageSize * this.pageNumber
-            } */
+          this.channelOptions = res.data
+          if (this.channelOptions.length > 0) {
+            this._getChannelCompany()
+            // this._getProductByPage()
+            // 12月2日添加-获取新的智播推荐
+            const { data } = await getRecommend({pageNumber: this.pageNumber, pageSize: this.pageSize})
+            this.products = data.list
+            this.total = data.total
           }
         }
-      }
     },
     //  获取栏目下的公司列表（分页查询）
     _getChannelCompany() {
@@ -297,7 +277,7 @@ export default {
     //  根据栏目查询栏目下的作品列表
     _getProductByPage() {
       const params = {
-        pageNumber: 1,
+        pageNumber: this.pageNumber,
         pageSize: this.checkpageSize,
         channelId: this.channelOptions[this.activeChannelIndex].id,
         keyWord: this.searchKey,
@@ -305,11 +285,7 @@ export default {
       getProductByPageWithAdmin(params).then(res => {
         if (res.message && res.message.code === 0) {
           this.products = res.data.list
-          console.log('vedio', this.products)
-          this.checktotal = res.data.total
-          /* if (this.products.length >= 20) {
-            this.checktotal = 100
-          } else this.checktotal = this.products.length */
+          this.total = res.data.total
         }
       })
     },
@@ -367,7 +343,7 @@ export default {
     margin: 0 auto;
     flex: 1;
     .list {
-      width: 918px;
+      width: 1100px;
       display: flex;
       flex-wrap: wrap;
       overflow: auto;
