@@ -136,6 +136,14 @@ export function downShelf (id, data='') {
   })
 }
 
+//隐藏和公开视频
+export function productStatus (id, status, data='') {
+  const url = _baseUrl + `channel/v1/updateProductStatus?id=${id}&status=${status}`
+  return post(url, data, { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }).then((res) => {
+    return Promise.resolve(res)
+  })
+}
+
 // 管理员根据栏目查询栏目下的作品列表
 export function getProductByPageWithAdmin (params) {
   const url = _baseUrl + 'channel/v1/getProductByPageWithAdmin'

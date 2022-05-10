@@ -386,7 +386,6 @@ export default {
       if (index < 20) {
         this.activeCompanyIndex = index
         if (index === -1) this.searchKey = ''
-        else if (choosedCompany === '合肥柯锐') this.searchKey = '合肥柯锐机房设备'
         else this.searchKey = choosedCompany
         // else this.products = this.companyworks[index].works
         this._getProductByPage()
@@ -524,7 +523,9 @@ export default {
     },
     // 下载视频
     downVideo (videoUrl) {
-      const downUrl = this.baseUrl + videoUrl
+      let downUrl
+      if (videoUrl.indexOf('http') != -1) downUrl = videoUrl
+      else downUrl = this.baseUrl + videoUrl
       // console.log('视频地址', downUrl)
 
       fetch(downUrl, {

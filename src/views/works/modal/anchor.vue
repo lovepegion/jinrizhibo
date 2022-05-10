@@ -52,9 +52,9 @@
             <a-radio :value="'100'" v-if="form.curBgSize.id === 0 || form.curBgSize.id === 1">
               居右
             </a-radio>
-            <a-radio :value="'custom'" v-if="form.curBgSize.id === 0 || form.curBgSize.id === 1" >
+            <!-- <a-radio :value="'custom'" v-if="form.curBgSize.id === 0 || form.curBgSize.id === 1" >
               自定义
-            </a-radio>
+            </a-radio> -->
           </a-radio-group>
         </a-form-model-item>
         <a-form-model-item label="主播表情">

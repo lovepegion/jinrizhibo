@@ -85,9 +85,18 @@ export function updateUserStatus (user, data='') {
 }
 
 // 修改用户信息
-export function updateUserInfo (data) {
-  const url = _baseUrl + 'updateUserInfo/'
+export function updateUserInfo (value, data='') {
+  const url = _baseUrl + `updateUserInfo?nickname=${value.nickname}&phoneNumber=${value.phoneNumber}`
   return post(url, data, { headers: { 'Content-Type': 'application/json' } }).then((res) => {
+    return Promise.resolve(res)
+  })
+}
+
+// 短信修改手机
+export function editPhone (value, data='') {
+  const url = _baseUrl + `editPhone?phoneNumber=${value.phoneNumber}&smsCode=${value.smsCode}`
+  // const url = _baseUrl + 'editPhone/'
+  return post(url, data, { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }).then((res) => {
     return Promise.resolve(res)
   })
 }

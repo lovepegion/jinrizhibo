@@ -53,8 +53,8 @@
           <div>
               <div class="extra-tips">优质的封面有利于推荐，格式支持JPEG、PNG</div>
               <div class="origin-container">
-                <div class="origin-box" v-if="!coverFileList.length">
-                  <img :src="'/webfile'+orginCover" class="origin-cover">
+                <div class="origin-box">
+                  <img :src="orginCover" class="origin-cover">
                 </div>
                 <a-upload
                   name="cover"
@@ -106,7 +106,8 @@ export default {
       albumDes: '', //专辑简介
       coverFileList: [], //封面
       coverUrl: '', //封面链接
-      orginCover: '', //原来封面
+      oldCover: '', //原来封面
+      orginCover: '', //展示方面
       sendAlbumloading: false //发布的loading
     }
   },
@@ -117,7 +118,7 @@ export default {
         this.scrollloading = true
         getProductByUserId({userId: this.$store.state.userInfo.id, type: 1, pageNumber: this.pageNumber, pageSize: this.pageSize}).then(res => {
           if (res.message && res.message.code === 0) {
-            let tempList = res.data.list.filter(item => item.status==='1')
+            let tempList = res.data.list.filter(item => (item.status==='1' || item.status==='2'))
             this.list = [...this.list, ...tempList]
             this.scrollloading = false
             this.pageNumber += 1
@@ -150,6 +151,7 @@ export default {
       const newFileList = this.coverFileList.slice()
       newFileList.splice(index, 1)
       this.coverFileList = newFileList
+      this.orginCover = '/webfile' +  this.oldCover
     },
     beforeCoverUpload(file) {
       const isJpgOrPng = file.type === 'image/jpeg' || file.type === 'image/png'
@@ -161,6 +163,7 @@ export default {
         this.$message.error('上传的封面必须小于2MB!');
       } else {
         this.coverFileList = [file]
+        this.orginCover = window.URL.createObjectURL(this.coverFileList[0])
       }
       return false //不会上传到链接
     },
@@ -189,8 +192,9 @@ export default {
           title: this.albumTitle,
           content: this.albumDes,
           synopsis: this.$store.state.userInfo.company,
-          cover: this.coverUrl,
-          userId: this.$store.state.userInfo.id
+          cover: this.coverUrl ? this.coverUrl : this.oldCover,
+          userId: this.$store.state.userInfo.id,
+          id: this.albumId
         }
         const albummakres = await updateAlbum(sendData)
         // console.log('albummakres', albummakres)
@@ -218,14 +222,17 @@ export default {
       const {data: {album, productInfo: { list }}} = await getAlbumDetail({albumId: this.albumId, pageNumber: 1, pageSize: 999})
       this.albumTitle = album.title
       this.albumDes = album.content
-      this.orginCover = album.cover
+      this.oldCover = album.cover
+      this.orginCover = '/webfile' + album.cover
 
       //获取专辑视频信息
       const https = list.map(listItem => getProductDetail({id: listItem.id}))
       const allres = await Promise.all(https)
       allres.forEach(res => {
-        this.choosedIndexs.push(res.data.id)
-        this.choosedWorks.push(res.data)
+        if (res.data && res.data.status !== '3') {
+          this.choosedIndexs.push(res.data.id)
+          this.choosedWorks.push(res.data)
+        }
       })
       // console.log('orderproducts', this.choosedWorks)
     }
@@ -308,7 +315,7 @@ export default {
           overflow: auto;
           text-align: left;
           height: 150px;
-          width: 340px;
+          width: 350px;
           padding: 5px;
           background-color: #fff;
           .choosed-item-title {

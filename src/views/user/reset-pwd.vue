@@ -3,7 +3,7 @@
     <h2 class="reset-pwd-header">重置密码</h2>
     <a-form-model ref="form" :model="form" class="user-form" @submit="handleSubmit" @submit.native.prevent :rules="rules">
       <a-form-model-item prop="phoneNumber">
-        <a-input v-model="form.phoneNumber" placeholder="请输入手机号码">
+        <a-input v-model="form.phoneNumber" placeholder="请输入手机号码" :disabled="$store.state.userInfo && $store.state.userInfo.phoneNumber">
           <a-icon slot="prefix" type="mobile" style="color:rgba(0,0,0,.25)" />
         </a-input>
       </a-form-model-item>
@@ -152,7 +152,7 @@ export default {
       this.countdowning = true
       const data = new FormData
       data.append('phoneNumber', this.form.phoneNumber)
-      data.append('type', 1)
+      data.append('type', 3)
       sms(data).then(res => {
         if (res.message && res.message.code === 0) {
           this.$message.success('获取成功')
@@ -169,8 +169,11 @@ export default {
     },
     toRegister() {
       this.$router.push('/user/register')
-    },
+    }
   },
+  mounted () {
+    if (this.$store.state.userInfo && this.$store.state.userInfo.phoneNumber) this.$set(this.form, 'phoneNumber', this.$store.state.userInfo.phoneNumber)
+  }
 }
 </script>
 

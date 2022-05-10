@@ -14,28 +14,28 @@
       </div>
       <!-- 个人登录 -->
       <a-form-model v-if="loginWay===0" ref="form" :model="form" class="user-form" @submit="handleSubmit" @submit.native.prevent :rules="rules">
-        <a-form-model-item prop="phoneNumber">
-          <div class="form-item">
-            <span class="input-title">手机号: </span>
-            <input class="input-self" type="text" v-model="form.phoneNumber" placeholder="请输入手机号码">
-          </div>
-        </a-form-model-item>
-        <a-form-model-item prop="password" v-if="mode === 1">
-          <div class="form-item">
-            <span class="input-title">密码: </span>
+        <div class="form-item">
+          <span class="input-title">手机号: </span>
+          <a-form-model-item prop="phoneNumber">
+            <a-input class="input-self" type="text" v-model="form.phoneNumber" placeholder="请输入手机号码"></a-input>
+          </a-form-model-item>
+        </div>
+        <div class="form-item" v-if="mode === 1">
+          <span class="input-title">密码: </span>
+          <a-form-model-item prop="password">
             <input class="input-self" type="password" v-model="form.password" placeholder="请输入登录密码">
-          </div>
-        </a-form-model-item>
-        <a-form-model-item prop="smsCode" v-if="mode === 2">
-          <div class="form-item">
-            <span class="input-title">验证码: </span>
-            <input class="input-self" type="password" v-model="form.smsCode" placeholder="请输入验证码">
+          </a-form-model-item>
+        </div>
+        <div class="form-item" v-if="mode === 2">
+          <span class="input-title">验证码: </span>
+          <a-form-model-item prop="smsCode">
+            <a-input class="input-self" type="password" v-model="form.smsCode" placeholder="请输入验证码"></a-input>
             <div class="sms-box">
               <div v-if="!countdowning" class="sms-code" :class="{'sms-code-count': smsAbled}" @click="getSmsCode">获取验证码</div>
               <count-down v-else @doneCountdown="doneCountdown" class="sms-code sms-code-count" />
             </div>
-          </div>
-        </a-form-model-item>
+          </a-form-model-item>
+        </div>
         <a-form-model-item>
           <div class="form-inline">
             <a-checkbox v-model="form.check">下次自动登录</a-checkbox>
@@ -87,6 +87,22 @@
           </div>
         </a-form-model-item>
         <a-form-model-item>
+          <a-button
+            type="primary"
+            html-type="submit"
+            :disabled="form.phoneNumber === ''"
+            class="submit-btn"
+          >
+            登录
+          </a-button>
+        </a-form-model-item>
+        <a-form-model-item>
+          <div class="form-inline" style="justifyContent: flex-end">
+            <!-- <a @click="toRegister" class="form-inline-link">免费注册</a> -->
+            <a @click="checkMode" class="form-inline-link">{{ mode === 1 ? '验证码登录' : '密码登录' }}</a>
+          </div>
+        </a-form-model-item>
+        <!-- <a-form-model-item>
           <div class="form-inline">
             <a-button
               type="primary"
@@ -98,7 +114,7 @@
             </a-button>
             <a-button @click="checkMode" class="form-inline-link">{{ mode === 1 ? '验证码登录' : '密码登录' }}</a-button>
           </div>
-        </a-form-model-item>
+        </a-form-model-item> -->
       </a-form-model>
     </div>
   </div>
@@ -180,11 +196,13 @@ export default {
       this.$set(this.form, 'check', true)
     },
     toPersonal () {
+      this.mode = 1
       this.loginWay = 0
       this.loginActive = 1
       this.initForm()
     },
     toCompany () {
+      this.mode = 1
       this.loginWay = 1
       this.loginActive = 2
       this.initForm()
@@ -306,8 +324,8 @@ export default {
         height: 40px;
         line-height: 40px;
         position: absolute;
-        top: 2px;
-        right: 0;
+        bottom: -12px;
+        right: 2px;
         .sms-code {
           padding: 0 20px;
           border-radius: 5px;
@@ -316,6 +334,7 @@ export default {
         }
       }
       .input-title {
+        line-height: 50px;
         font-size: 14px;
         color: #212121;
       }

@@ -11,11 +11,11 @@
         <a-icon type="plus-circle" /><span style="marginLeft: 4px;">发布作品</span>
       </div>
       <div v-if="!isPhone" class="add-product" @click="toAlbumMake">
-        <a-icon type="plus-circle" /><span style="marginLeft: 4px;">专辑制作</span>
+        <a-icon type="plus-circle" /><span style="margin:0 4px;">专辑制作</span>
       </div>
-      <div v-if="!isPhone" class="btn cert-btn" @click="toCompanyCert">
+      <!-- <div v-if="!isPhone" class="btn cert-btn" @click="toCompanyCert">
         单位认证
-      </div>
+      </div> -->
       <div v-if="userInfo.token">
         <a-popover placement="bottomRight">
           <template slot="content">
@@ -30,7 +30,7 @@
       </a>
     </div>
     <a-modal
-      title="普通用户只能免费发布3次，请选择充值选项"
+      title="普通用户只能免费发布2次，请选择充值选项"
       destroyOnClose
       :visible="checkPay"
       :maskClosable="false"
@@ -60,7 +60,7 @@
 <script>
 import WeixinPay from '@/components/weixinpay/WeixinPay.vue'
 import QRCode from 'qrcodejs2'
-import { getItem } from '@/utils/cache.js'
+import { setItem, getItem } from '@/utils/cache.js'
 import { mapMutations } from 'vuex'
 import { wxCharge, getPayRechargeByOutTradeNo } from '@/api/weixinpay.js'
 import { getUserInfo } from '@/api/user.js'
@@ -106,14 +106,16 @@ export default {
         const dateNow = d.getTime()
         const isExpired = dateNow > userInfo.memberExpire
         // console.log('isExpired', isExpired)
-        if (!isExpired || userInfo.publishTime >= 0) {
+        if (!isExpired || userInfo.publishTime > 0) {
           // this.$router.push('/product/make')
+          setItem('toMakepage', 'makepage')
           let routeData = this.$router.resolve({path: '/product/make'})
           window.open(routeData.href, '_blank')
           return
         }
-      } else if (userInfo.publishTime >= 0) {
+      } else if (userInfo.publishTime > 0) {
         // this.$router.push('/product/make')
+        setItem('toMakepage', 'makepage')
         let routeData = this.$router.resolve({path: '/product/make'})
         window.open(routeData.href, '_blank')
         return
@@ -129,7 +131,7 @@ export default {
       }
     },
     toCompanyCert() {
-      if (this.userInfo && this.userInfo.checkFlag === '0') {
+      if (this.$store.state.userInfo && this.$store.state.userInfo.checkFlag === '0') {
         // this.$router.push('/company/cert')
         let routeData = this.$router.resolve({path: '/company/cert'})
         window.open(routeData.href, '_blank')
@@ -152,6 +154,7 @@ export default {
       }
     },
     async handleOk(e) {
+      setItem('toMakepage', '')
       this.confirmLoading = true;
       // console.log('feeMenu', this.feeMenu)
       const res = await wxCharge({userId: this.userInfo.id, payId: this.feeMenu.id})
@@ -203,6 +206,7 @@ export default {
       qrcode.removeChild(qrcode.children[1])
     },
     handleCancel(e) {
+      setItem('toMakepage', '')
       // console.log('Clicked cancel button');
       if (this.timer) clearInterval(this.timer)
       if (this.boxShow) {
@@ -226,6 +230,8 @@ export default {
             this.closeBoxShowSuccess()
             getUserInfo().then(userres => this.setUserInfo({...this.$store.state.userInfo, ...userres.data}))
             setTimeout(() => {
+              this.succeedShow = false
+              this.pricesShow = true
               this.checkPay = false
               return
             }, 3000)
@@ -236,9 +242,13 @@ export default {
       if (num === 500) {
         this.closeBoxShowPrices()
       }
+    },
+    checkPayShow () {
+      if (getItem('toMakepage') === 'makepage' && this.$store.state.userInfo.publishTime <= 2 && !(this.$store.state.userInfo.company)) this.checkPay = true
     }
   },
   mounted () {
+    this.checkPayShow()
     this.pathname = encodeURIComponent(window.location.pathname)
     if (window.innerWidth < 700) {
       this.isPhone = true

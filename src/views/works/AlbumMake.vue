@@ -111,7 +111,7 @@ export default {
         this.scrollloading = true
         getProductByUserId({userId: this.$store.state.userInfo.id, type: 1, pageNumber: this.pageNumber, pageSize: this.pageSize}).then(res => {
           if (res.message && res.message.code === 0) {
-            let tempList = res.data.list.filter(item => item.status==='1')
+            let tempList = res.data.list.filter(item => (item.status==='1' || item.status==='2'))
             this.list = [...this.list, ...tempList]
             this.scrollloading = false
             this.pageNumber += 1
@@ -296,7 +296,7 @@ export default {
           overflow: auto;
           text-align: left;
           height: 150px;
-          width: 340px;
+          width: 350px;
           padding: 5px;
           background-color: #fff;
           .choosed-item-title {

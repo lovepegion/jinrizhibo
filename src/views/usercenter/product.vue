@@ -7,7 +7,7 @@
       <li class="item" v-for="item in list" :key="item.id">
         <div v-if="item.coverUrl && item.coverUrl.length < 3" class="item-card1">
           <!-- 通过审核 -->
-          <div v-if="item.status==='1'" class="item-image-container imgcursor"  @click="toDetail(item.id)">
+          <div v-if="item.status==='1' || item.status==='2'" class="item-image-container imgcursor"  @click="toDetail(item.id)">
             <div class="item-image" alt="cover" :style="{backgroundImage: (item.coverUrl[0].indexOf('http') != -1) ? 'url(' + item.coverUrl[0] + ')' : 'url(' + '/webfile' + item.coverUrl[0] + ')'}" />
             <i class="inner-play"></i>
           </div>
@@ -24,7 +24,12 @@
               <span style="margin-right: 20px;">{{ item.nickname }}</span>
               <span>{{ item.createDate }}</span>
               <!-- plus0_delete -->
-              <button class="plus0_delete" @click="onDel(item.id)">删除视频</button>
+              <div class="button-group">
+                <button v-if="item.status==='2'" class="plus0_delete" @click="changeStatus(item.id, 1)" style="marginRight:5px">公开视频</button>
+                <button v-else-if="item.status==='1'" class="plus0_delete" @click="changeStatus(item.id, 2)" style="marginRight:5px">隐藏视频</button>
+                <button class="plus0_delete" @click="onDel(item.id)" style="marginRight:5px">删除视频</button>
+                <button class="plus0_delete" @click="downVideo(item.videoUrl)">下载视频</button>
+              </div>
             </div>
           </div>
         </div>
@@ -40,7 +45,12 @@
             <span style="margin-right: 20px;">{{ item.nickname }}</span>
             <span>{{ item.createDate }}</span>
             <!-- plus0_delete -->
-            <button class="plus0_delete" @click="onDel(item.id)">删除视频</button>
+            <div class="button-group">
+              <button v-if="item.status==='2'" class="plus0_delete" @click="changeStatus(item.id, 1)" style="marginRight:5px">公开视频</button>
+              <button v-else-if="item.status==='1'" class="plus0_delete" @click="changeStatus(item.id, 2)" style="marginRight:5px">隐藏视频</button>
+              <button class="plus0_delete" @click="onDel(item.id)" style="marginRight:5px">删除视频</button>
+              <button class="plus0_delete" @click="downVideo(item.videoUrl)">下载视频</button>
+            </div>
           </div>
         </div>
       </li>
@@ -53,8 +63,9 @@
 </template>
 
 <script>
+import StreamSaver from 'streamsaver'
 import { getProductByUserId, getProductByCollectionUserId } from '@/api/make'
-import { deleteWork } from '@/api/update.js'
+import { deleteWork, productStatus } from '@/api/update.js'
 import { getAlbumByUserId } from '@/api/album.js'
 import UserAlbumItem from '@/components/UserAlbumItem.vue'
 export default {
@@ -63,7 +74,7 @@ export default {
   props: {
     mode: { // 0：用户作品，1：收藏作品
       type: Number,
-      default: 0
+      default: () => 0
     }
   },
 	data() {
@@ -84,10 +95,49 @@ export default {
       this.pageNumber = 1
       this.total = 0
       this.fetchData()
+      this.onGetAlbumByUserId()
     }
   },
 	methods: {
+    async changeStatus (id, status) {
+      const res = await productStatus(id, status)
+      if (res.message && res.data === 'success') {
+        this._getProductByUserId(true)
+      }
+    },
+    // 下载视频
+    downVideo (videoUrl) {
+      let downUrl
+      if (videoUrl.indexOf('http') != -1) downUrl = videoUrl
+      else downUrl = this.baseUrl + videoUrl
+      // console.log('视频地址', downUrl)
+
+      fetch(downUrl, {
+            method: 'GET',
+            cache: 'no-cache'
+      }).then(res=> {
+          const fileStream = StreamSaver.createWriteStream('video.mp4', {
+              size : res.headers.get("content-length")
+          })
+          const readableStream = res.body
+          // more optimized
+          if (window.WritableStream && readableStream.pipeTo) {
+              return readableStream.pipeTo(fileStream)
+                  .then(() => console.log('done writing'))
+          }
+          window.writer = fileStream.getWriter()
+
+          const reader = res.body.getReader()
+          const pump = () => reader.read()
+              .then(res => res.done
+                  ? window.writer.close()
+                  : window.writer.write(res.value).then(pump))
+
+          pump()
+      })
+    },
     async onGetAlbumByUserId () {
+      this.albumList = []
       if (this.mode === 0 && this.$store.state.userInfo.company && this.pageNumber === 1) {
         const res = await getAlbumByUserId(this.$store.state.userInfo.id)
         this.albumList = res.data.list
@@ -95,6 +145,7 @@ export default {
       }
     },
     fetchData() {
+      this.list = []
       if (this.mode === 0) {
         this._getProductByUserId()
       } else {
@@ -112,7 +163,7 @@ export default {
       this.fetchData()
     },
 		//  获取用户作品列表
-    _getProductByUserId() {
+    _getProductByUserId(statusFlag=false) {
       const params = {
         userId: this.$store.state.userInfo.id,
 				type: 1,
@@ -124,6 +175,7 @@ export default {
           this.list = res.data.list
           this.total = res.data.total
           console.log('自己的作品', this.list)
+          if (statusFlag) this.$message.success('作品状态修改成功!')
         }
       })
     },
@@ -191,6 +243,9 @@ export default {
       .item-content-info {
         color: #999999;
         font-size: 12px;
+        .button-group {
+          display: flex;
+        }
       }
       .item-card1 {
         display: flex;

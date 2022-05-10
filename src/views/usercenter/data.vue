@@ -9,7 +9,7 @@
           </div>
           <div class="user-name">{{ userInfo.nickname }}</div>
         </div>
-        <h2 class="base-data">基本信息</h2>
+        <h2 class="base-data">基本信息 <button class="change-button" @click="toModify">修改资料</button> <button class="change-button" style="marginLeft:10px" @click="toChangePW">修改密码</button></h2>
         <a-form-model :model="userInfo" :label-col="labelCol" :wrapper-col="wrapperCol" labelAlign="left">
           <a-form-model-item label="用户昵称">
             <a-input v-model="userInfo.nickname" disabled />
@@ -196,6 +196,16 @@ export default {
     }
   },
   methods: {
+    toModify () {
+      // this.$router.push('/user/modify')
+      let routeData = this.$router.resolve({path: '/user/modify'})
+      window.open(routeData.href, '_blank')
+    },
+    toChangePW () {
+      // this.$router.push('/user/reset-pwd')
+      let routeData = this.$router.resolve({path: '/user/reset-pwd'})
+      window.open(routeData.href, '_blank')
+    },
     tabChange(key) {
       this.activeKey = key
     },
@@ -353,6 +363,20 @@ export default {
     font-size: 16px;
     line-height: 50px;
     font-weight: 600;
+    .change-button {
+      width: 72px;
+      height: 24px;
+      font-size: 12px;
+      line-height: 20px;
+      margin-left: 55px;
+      border: 1px solid #bbb;
+      border-radius: 5px;
+    }
+    .change-button:hover {
+      border: 1px solid #00a1d6;
+      color: #00a1d6;
+      cursor: pointer;
+    }
   }
   .product-auth {
     width: 500px;

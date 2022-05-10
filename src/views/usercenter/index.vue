@@ -17,7 +17,7 @@
 						<i class="nav-icon" :style="{backgroundImage: `url(${require('../../assets/icon/usercenter-charge.png')})`}" />
 						<span>充值记录</span>
 					</div>
-					<div class="nav-item" :class="{'nav-item-active': activeNav === 5}" @click="activeNav=5" v-if="$store.state.userInfo.id==='_3eef5c9f23ce49f1ac45c34d87897598'">
+					<div class="nav-item" :class="{'nav-item-active': activeNav === 6}" @click="activeNav=6" v-if="$store.state.userInfo.id==='_3eef5c9f23ce49f1ac45c34d87897598'">
 					<!-- <div class="nav-item" :class="{'nav-item-active': activeNav === 6}" @click="activeNav=6"> -->
 						<i class="nav-icon" :style="{backgroundImage: `url(${require('../../assets/icon/usercenter-chargesetting.png')})`}" />
 						<span>充值设置</span>

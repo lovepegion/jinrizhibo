@@ -114,6 +114,7 @@ export default {
         text-align: left;
       }
       .work-list {
+        margin-bottom: 20px;
         .work-item-title {
           height: 50px;
           line-height: 50px;

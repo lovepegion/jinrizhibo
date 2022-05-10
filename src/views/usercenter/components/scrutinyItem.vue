@@ -183,7 +183,7 @@ export default {
   data () {
     return {
       isTopped: false, // 是否置顶
-      playbase: videoPlayUrl, // 线上播放基准地址
+      playbase: videoPlayUrl + 'detail/', // 线上播放基准地址
       status: '1', // 上下架状态
       updating: false, // 上下架操作状态
       isRecommended: false // 是否已推荐

@@ -221,8 +221,8 @@
                   <img v-if="choosedCompany" :src="require('@/assets/image/'+choosedCompany.trim()+'.png')">
                   <img v-else-if="userInfo.company" :src="require('@/assets/image/'+userInfo.company.trim()+'.png')">
                   <!-- <img v-else :src="require('@/assets/image/'+detail.channelName.trim()+'.png') || ''"> -->
-                  <div v-if="choosedCompany && choosedCompany != '合肥柯锐'" class="plus_lefttop_company">{{choosedCompany}}</div>
-                  <div v-else-if="userInfo.company && userInfo.company != '合肥柯锐'" class="plus_lefttop_company">{{userInfo.company}}</div>
+                  <div v-if="choosedCompany && (choosedCompany != '合肥柯锐' && choosedCompany != '合肥柯锐机房设备')" class="plus_lefttop_company">{{choosedCompany}}</div>
+                  <div v-else-if="userInfo.company && (userInfo.company != '合肥柯锐机房设备' && userInfo.company != '合肥柯锐')" class="plus_lefttop_company">{{userInfo.company}}</div>
                 </div>
               <!-- plus_logo下的公司名 -->
               </div>
@@ -416,7 +416,8 @@
 
 <script>
 // import subChannel1 from '@/assets/image/subChannel1.png'
-import { mapState } from 'vuex'
+import { getItem } from '@/utils/cache.js'
+import { mapState, mapMutations } from 'vuex'
 import mammoth from 'mammoth'
 import 'quill/dist/quill.core.css'
 import 'quill/dist/quill.snow.css'
@@ -429,6 +430,7 @@ import anchorModal from './modal/anchor.vue'
 import musicModal from './modal/music.vue'
 import { add, getTaskResult, getAllChannel, sendProduct, getAudio, getChannelCompany } from '@/api/make'
 import { parseDoc, upload } from '@/api/file'
+import { getUserInfo } from '@/api/user.js'
 import calcText from '@/utils/lang'
 import Langdrop from './components/langdrop.vue'
 import moment from 'moment';
@@ -606,15 +608,7 @@ export default {
     }
   },
   async mounted() {
-    // 获取公司列表作为二级标题
-    /* const params = {
-      pageNumber: 1,
-      pageSize: 1000,
-      // channelId: 'ea43393fdec54c6d92cd55a843cf05f5',
-      channelId: this.formPreview.channel // 12月4日修改
-    }
-    const { data } = await getChannelCompany(params)
-    this.companies = data.list */
+    this.checkDirectToMake()
     const _this = this
     this.$refs.myQuillEditor.quill.on('selection-change', function(range, oldRange, source) {
       if (range) {
@@ -641,6 +635,25 @@ export default {
     insertVideoRef.onended = this.continueUserVideo
   },
   methods: {
+    ...mapMutations({ setUserInfo: 'SET_USERINFO' }),
+    checkDirectToMake () {
+      const userInfo = getItem('userInfo')
+      //判断会员是否过期
+      if (userInfo.company) {
+        return
+      } else if (userInfo.memberExpire) {
+        const d = new Date()
+        const dateNow = d.getTime()
+        const isExpired = dateNow > userInfo.memberExpire
+        if (!isExpired || userInfo.publishTime > 0) {
+          return
+        }
+      } else if (userInfo.publishTime > 0) {
+        return
+      }
+      this.$router.push('/')
+      return
+    },
     initHeadVedio () {
       if (this.headVideoUrl) {
         const headVideo = this.$refs.headVideo
@@ -1300,8 +1313,11 @@ export default {
           sendProduct(formData).then(res => {
             if (res.message && res.message.code === 0) {
               this.$message.success('作品发布成功')
-              this.sendProductloading = false
-              this.$router.push('/')
+              getUserInfo().then(res => {
+                this.setUserInfo({...this.$store.state.userInfo, ...res.data})
+                this.sendProductloading = false
+                this.$router.push('/')
+              })
             }
           })
         } else {

@@ -261,11 +261,13 @@ export default {
 			this.switchedIndex = index
 			if (this.switchedIndex === -1) {
 				// console.log('detail_videourl', this.detail.videoUrl)
-				userVideoRef.src = this.baseUrl + this.detail.videoUrl
+				if (this.detail.videoUrl.indexOf('http') != -1) userVideoRef.src = this.detail.videoUrl
+				else userVideoRef.src = this.baseUrl + this.detail.videoUrl
 				userVideoRef.load()
 			} else {
 				// 12月4日修改，已转为自己服务器连接
-				userVideoRef.src = this.baseUrl + this.videoUrls[this.switchedIndex].videoUrl
+				if (this.detail.videoUrl.indexOf('http') != -1) userVideoRef.src = this.videoUrls[this.switchedIndex].videoUrl
+				else userVideoRef.src = this.baseUrl + this.videoUrls[this.switchedIndex].videoUrl
 				userVideoRef.load()
 			}
 		},
@@ -409,7 +411,8 @@ export default {
 						this.wechatShare({
 							title: this.detail.title,
 							desc: this.synopsis,
-							img: 'http://www.jrzbcloud.com/webfile' + this.videoCover[0]
+							// img: 'http://www.jrzbcloud.com/webfile' + this.videoCover[0]
+							img: (this.videoCover[0].indexOf('http') != -1) ? this.videoCover[0] : ('http://www.jrzbcloud.com/webfile' + this.videoCover[0])
 						})
 					}
 				}

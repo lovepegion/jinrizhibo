@@ -15,7 +15,7 @@
         <span>{{ album.createDate }}</span>
       </div>
       <div class="t313c_wrap">
-        <span style="fontSize:16px;color:goldenrod">视频专辑</span>
+        <span style="fontSize:16px;color:goldenrod" @click="toAlbumDetail()">视频专辑</span>
         <span class="iconfont icon-fenxiang t313c_share hover-blue">分享</span>
         <div class="t313c_1_wrap">
           <Share :title="album.title" :videoId="album.id" :isAlbum="true"></Share>

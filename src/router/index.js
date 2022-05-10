@@ -16,7 +16,7 @@ const routes = [
     children: [
       {
         path: 'make',
-        component: () => import('@/views/works/make'),
+        component: () => import('@/views/works/Make.vue'),
         meta: { requiresAuth: true }
       },
       {
@@ -83,6 +83,10 @@ const routes = [
         path: 'reset-pwd',
         component: () => import('@/views/user/reset-pwd'),
       },
+      {
+        path: 'modify',
+        component: () => import('@/views/user/Modify'),
+      }
     ],
   },
   {
