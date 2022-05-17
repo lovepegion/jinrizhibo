@@ -11,9 +11,9 @@ export function getAlbum (data) {
 }
 
 // 获取用户专辑通过公司名
-export function getAlbumBykey (key) {
-  const url = _baseUrl + `album/v1/getAlbum?synopsis=${key}`
-  return get(url).then((res) => {
+export function getAlbumBykey (params) {
+  const url = _baseUrl + 'album/v1/getAlbum'
+  return get(url, params).then((res) => {
     return Promise.resolve(res)
   })
 }

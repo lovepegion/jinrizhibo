@@ -362,6 +362,11 @@ export default {
       }
     },
     checkChannel(index) {
+      if (index == 1) {
+        let routeData = this.$router.resolve({path: '/channel'})
+        window.open(routeData.href, '_blank')
+        return
+      }
       this.albums = []
       this.setChoosedCompany('')
       this.pageFlag = 'checkChannel'

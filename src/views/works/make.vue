@@ -368,7 +368,8 @@
               </template>
             </a-form-model-item>
             <a-form-model-item label="公开设置" :labelCol="{span: 6}" :wrapperCol="{span: 18}">
-              <a-switch v-model="formPreview.type" />
+              <!-- <a-switch v-model="formPreview.type" /> -->
+              <a-switch v-model="isOpen" />
             </a-form-model-item>
             <a-form-model-item label="转载来源" :labelCol="{span: 6}" :wrapperCol="{span: 18}">
               <a-input v-model="formPreview.source" placeholder="请输入转载来源" />
@@ -486,6 +487,7 @@ export default {
         '河南话', '山东话', '湖北话', '安徽合肥话', '内蒙古方言', '德语', '法语', '印地语', 
         '意大利语', '日语', '韩语', '西班牙语', '俄语', '泰语'
       ], 
+      isOpen: true, //是否公开
       selectedLangs: [], // 选择的语言种类列表，不超过种
       chineseLangs: ['普通话', '台湾话', '东北话', '四川话', '陕西话', '广东话', '湖南话', '河南话', '山东话', '湖北话', '安徽合肥话', '内蒙古方言'], // 中文地方语言
       textLangs: [], // 需要输入文本的语言
@@ -1257,6 +1259,8 @@ export default {
 
           formData.append('title', this.formPreview.title)
           // console.log('title')
+
+          formData.append('status', this.isOpen ? '1' : '2')
 
           let allContent = this.maincontent
           if (this.textLangs.length > 1) {

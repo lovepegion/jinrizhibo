@@ -154,7 +154,9 @@ export default {
     },
     //  跳转详情
     toDetail(id) {
-      this.$router.push(`/product/detail/${id}`)
+      // this.$router.push(`/product/detail/${id}`)
+      let routeData = this.$router.resolve({path: `/product/detail/${id}`})
+      window.open(routeData.href, '_blank')
     },
     onPageChange(pageNumber) {
       this.albumList = []

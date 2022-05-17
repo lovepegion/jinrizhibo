@@ -301,7 +301,7 @@ export default {
 						})
 						console.log('poster', this.videoCover[0]) */
 						this.isPhone = true
-						this.$refs.userVideo.setAttribute('poster', this.baseUrl + this.videoCover[0])
+						this.$refs.userVideo.setAttribute('poster', (this.videoCover[0].indexOf('http') != -1) ? this.videoCover[0] : (this.baseUrl + this.videoCover[0]))
 					}
 					// 判断并记录自定义时间
 					if (this.detail.adTime && this.detail.adTime != '开始' && this.detail.adTime != '中间' && this.detail.adTime != '结尾') {
@@ -315,7 +315,7 @@ export default {
 
 					if (tempArray.length > 1 && tempArray.length !== 3) this.logoUrl = tempArray[tempArray.length - 1] // 分离logo图片
 
-					if (this.detail.status !== '1') {
+					if (this.detail.status === '3') {
 						if (this.$store.state.userInfo.id && this.$store.state.userInfo.id==='_3eef5c9f23ce49f1ac45c34d87897598') {
 							this.likeFlag = res.data.likeFlag
 							this.collectionFlag = res.data.collectionFlag

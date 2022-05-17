@@ -10,6 +10,10 @@ const routes = [
     component: () => import('@/views/main/main'),
   },
   {
+    path: '/channel',
+    component: () => import('@/views/works/Channel.vue')
+  },
+  {
     path: '/product',
     component: () => import('@/components/layout/ContentLayout'),
     meta: {},
