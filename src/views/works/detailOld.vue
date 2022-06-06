@@ -23,7 +23,7 @@
 					<!-- plus0_1_logo和公司 -->
 					<div class="plus0_1_channel">
 						<!-- plus_logo -->
-						<div class="plus_logo_show" v-if="(choosedCompany != '合肥柯锐') && (choosedCompany != '合肥柯锐机房设备') && (choosedCompany != '霍邱融媒')">
+						<div class="plus_logo_show" v-if="(choosedCompany != '合肥柯锐') && (choosedCompany != '合肥柯锐机房设备')">
 							<img v-if="logoUrl" :src="(logoUrl.indexOf('http') != -1) ? logoUrl : (baseUrl + logoUrl)">
 						</div>
 						<div v-else>
@@ -31,7 +31,7 @@
 						</div>
 						<div></div>
 						<!-- plus_公司 -->
-						<div v-if="(choosedCompany != '合肥柯锐') && (choosedCompany != '合肥柯锐机房设备') && (choosedCompany != '霍邱融媒')" class="plus_company_name">
+						<div v-if="(choosedCompany != '合肥柯锐') && (choosedCompany != '合肥柯锐机房设备')" class="plus_company_name">
 							{{choosedCompany}}
 						</div>
 					</div>
@@ -39,7 +39,7 @@
 					<video
 						v-show="headVideoUrl"
 						:autoplay="isAlbumPlaying"
-						:poster="(window.navigator.userAgent.indexOf('iPhone') > -1 || window.navigator.userAgent.indexOf('Android') > -1) ? (JSON.parse(detail.cover)[0].indexOf('http') > -1 ? JSON.parse(detail.cover)[0] : '/webfile' + JSON.parse(detail.cover)[0]) : ''"
+						:poster="(!!window.navigator.userAgent.match(/AppleWebKit.*Mobile.*/) || !!window.navigator.userAgent.match(/AppleWebKit/)) ? JSON.parse(detail.cover)[0] : ''"
 						ref="headVideo"
 						controls
 						disablePictureInPicture
@@ -50,19 +50,15 @@
 						<source :src="(headVideoUrl.indexOf('http') != -1) ? detail.videoUrl : (baseUrl + detail.videoUrl)" type="video/mp4">
 					</video>
 					<!-- plus0_1_1用户视频 -->
-					<!-- :poster="(window.navigator.userAgent.indexOf('iPhone') > -1) ? JSON.parse(detail.cover)[0] : ''" -->
-											<!-- @loadeddata="getFirstImageCover" -->
 					<video
 						ref="userVideo"
 						:autoplay="isAlbumPlaying"
-						:poster="(window.navigator.userAgent.indexOf('iPhone') > -1 || window.navigator.userAgent.indexOf('Android') > -1) ? (JSON.parse(detail.cover)[0].indexOf('http') > -1 ? JSON.parse(detail.cover)[0] : '/webfile' + JSON.parse(detail.cover)[0]) : ''"
+						:poster="(!!window.navigator.userAgent.match(/AppleWebKit.*Mobile.*/) || !!window.navigator.userAgent.match(/AppleWebKit/)) ? JSON.parse(detail.cover)[0] : ''"
 						controls
-						x5-video-player-type="h5"
-						x5-playsinline  playsinline webkit-playsinline="true"
 						disablePictureInPicture
 						controlsList="nodownload noremoteplayback"
 						:src="(detail.videoUrl.indexOf('http') != -1) ? detail.videoUrl : (baseUrl + detail.videoUrl)"
-						style="width: 100%;objectFit:cover"
+						style="width: 100%"
 					>
 						<source :src="(detail.videoUrl.indexOf('http') != -1) ? detail.videoUrl : (baseUrl + detail.videoUrl)" type="video/mp4">
 					</video>
@@ -167,7 +163,6 @@ export default {
 	mixins: [WeixinShare], // 包含wechatShare方法
 	data() {
 		return {
-			window,
 			isAlbumPlaying: false, //是否在播放专辑
 			showSecondTitle: true,
 			showSynopsis: true,
@@ -201,7 +196,7 @@ export default {
 			switchIndex: -1, // 所选语言的index
 			noChineseLangs: [], // 没有中文的语言表
 			voiceContent: '', // 语音内容
-			// videoCover: '', // 视频封面
+			videoCover: '', // 视频封面
 			chinesArray: ['普通话', '台湾话', '东北话', '四川话', '陕西话', '广东话', '湖南话', '河南话', '山东话', '湖北话', '安徽合肥话', '内蒙古方言'],
 			albumId: '', //
 			playIndex: 0, // 当前播放的专辑index
@@ -302,8 +297,8 @@ export default {
 			}
 			getProductDetail(params).then((res) => {
 				if (res.message && res.message.code === 0) {
-					
 					this.detail = res.data;
+					this.videoCover = JSON.parse(this.detail.cover)
 					if (window.innerWidth < 700) {
 						/* let url = this.baseUrl + this.detail.videoUrl
 						console.log('posturl', url)
@@ -312,7 +307,7 @@ export default {
 						})
 						console.log('poster', this.videoCover[0]) */
 						this.isPhone = true
-						// this.$refs.userVideo.setAttribute('poster', JSON.parse(this.detail.cover)[0])
+						this.$refs.userVideo.setAttribute('poster', (this.videoCover[0].indexOf('http') != -1) ? this.videoCover[0] : (this.baseUrl + this.videoCover[0]))
 					}
 					// 判断并记录自定义时间
 					if (this.detail.adTime && this.detail.adTime != '开始' && this.detail.adTime != '中间' && this.detail.adTime != '结尾') {
@@ -326,7 +321,7 @@ export default {
 
 					if (tempArray.length > 1 && tempArray.length !== 3) this.logoUrl = tempArray[tempArray.length - 1] // 分离logo图片
 
-					if (this.detail.status !== '1') {
+					if (this.detail.status === '3') {
 						if (this.$store.state.userInfo.id && this.$store.state.userInfo.id==='_3eef5c9f23ce49f1ac45c34d87897598') {
 							this.likeFlag = res.data.likeFlag
 							this.collectionFlag = res.data.collectionFlag
@@ -348,10 +343,7 @@ export default {
 								})
 								// console.log('videoUrls', this.videoUrls)
 							}
-							let separator
-							if (this.detail.secondTitle && this.detail.secondTitle.indexOf("@@@-@@@@") > -1) separator = "@@@-@@@@"
-							else separator = "-"
-							const tempArray1 = this.detail.secondTitle.split(separator)
+							const tempArray1 = this.detail.secondTitle.split("-")
 							this.secondTitle = tempArray1[0]
 							this.mainLang = tempArray1[1]
 							this.choosedCompany = tempArray1[2]
@@ -380,10 +372,7 @@ export default {
 							this.adUrl = res.data.adUrl || ''
 							this.headVideoUrl = ''
 						}
-						let separator
-						if (res.data.secondTitle && res.data.secondTitle.indexOf("@@@-@@@@") > -1) separator = "@@@-@@@@"
-						else separator = "-"
-						const tempArray = res.data.secondTitle.split(separator)
+						const tempArray = res.data.secondTitle.split("-")
 						this.secondTitle = tempArray[0]
 						this.mainLang = tempArray[1]
 						this.choosedCompany = tempArray[2]
@@ -428,7 +417,8 @@ export default {
 						this.wechatShare({
 							title: this.detail.title,
 							desc: this.synopsis,
-							img: (JSON.parse(this.detail.cover)[0].indexOf('http') != -1) ? JSON.parse(this.detail.cover)[0] : 'http://www.jrzbcloud.com/webfile' + JSON.parse(this.detail.cover)[0]
+							// img: 'http://www.jrzbcloud.com/webfile' + this.videoCover[0]
+							img: (this.videoCover[0].indexOf('http') != -1) ? this.videoCover[0] : ('http://www.jrzbcloud.com/webfile' + this.videoCover[0])
 						})
 					}
 				}
@@ -567,55 +557,6 @@ export default {
 				allres.forEach(res => this.albumProducts.push(res.data))
 				console.log('orderproducts', this.albumProducts)
 			}
-		},
-		getFirstImageCover () {
-			//下两行可以解决Android微信中的封面问题
-			let video = this.$refs.userVideo
-			video.setAttribute("poster", JSON.parse(this.detail.cover)[0]);
-			//解决ios微信中的封面问题
-			/* const u = navigator.userAgent
-			const isiOS = !!u.match(/\(i[^;]+;( U;)? CPU.+Mac OS X/)
-			if (isiOS) {
-				console.log('is IOS')
-				//weixinJSBridge是微信浏览器的内置接口
-				if (window.WeixinJSBridge) {
-					window.WeixinJSBridge.invoke('getNetworkType', {}, function (e) {
-						video.play() 
-						// setTimeout(() => { video.pause() }, 200)
-					}, false)
-				} else {
-					window.document.addEventListener('WeixinJSBridgeReady', function () {
-						window.WeixinJSBridge.invoke('getNetworkType', {}, function (e) {
-							video.load()
-							video.play()
-							// setTimeout(() => { video.pause() }, 200)
-						})
-					}, false)
-				}
-			} */
-
-		/* getPoster () {
-			let video
-			if (this.headVideoUrl) video = this.$refs.headVideo
-			else video = this.$refs.userVideo
-			//使用严格模式
-			'use strict';
-			//第一帧图片与原视频的比例
-			var scal = 0.8;
-			//监听页面加载事件
-			video.addEventListener('dataLoad',function(){
-				//创建一个画布
-				var canvas = document.createElement('canvas');
-				canvas.width = video.style.width*scal;
-				canvas.height = video.style.height*scal;
-				//绘制图片
-				canvas.getContentext('2d').drawImage(video,0,0,canvas.width,canvas.height);
-				//设置标签的poster属性
-				video.setAttribute("poster",canvas.toDataURL("image/png"));
-				
-			});
-		} */
-
 		}
 	},
 	created () {
@@ -624,7 +565,6 @@ export default {
 	},
 	mounted () {
 		this.isAlbumPlay()
-		// this.getPoster()
 		this.addPlayListener()
 		this.loadComments()
 	}
@@ -670,7 +610,7 @@ export default {
 			font-weight: 400;
 			color: #666666;
 			line-height: 30px;
-			// margin-top: 40px;
+			margin-top: 40px;
 		}
 	}
 	.right-info {

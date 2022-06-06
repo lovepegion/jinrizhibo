@@ -43,7 +43,8 @@
                 <a v-if="!certInfo.companyEditable && userInfo.checkFlag === '2'" @click="certInfo.companyEditable = true" class="edit-btn" style="color: #9a9a9a;">取消</a>
               </a-form-model-item>
               <a-form-model-item label="营业执照" class="edit-avatar-modal-form-cert">
-                <img :src="certUrl" alt="company" style="width: 200px;">
+                <img v-if="this.userInfo.companyLicense" :src="certUrl" alt="company" style="width: 200px;">
+                <span v-else>没有上传营业执照</span>
                 <a-upload
                   action=""
                   list-type="picture"

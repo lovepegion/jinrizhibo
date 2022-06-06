@@ -39,9 +39,9 @@
         scroll-distance="10"
       > -->
       <ul class="list">
-        <li class="item" v-for="album in albums" :key="album.id">
+        <!-- <li class="item" v-for="album in albums" :key="album.id">
           <AlbumItem :album="album"></AlbumItem>
-        </li>
+        </li> -->
         <li class="item" v-for="item in products" :key="item.id">
           <div v-if="item.status === '1'">
             <div v-if="item.coverUrl && item.coverUrl.length < 3" class="item-card1">
@@ -243,18 +243,17 @@ import { getHotSearch, getRecommend, getKeyWord } from '@/api/update.js'
 import { getAlbumBykey, getAlbumDetail } from '@/api/album.js'
 import Footer from '@/components/layout/Footer.vue'
 import StreamSaver from 'streamsaver'
-import AlbumItem from '@/components/AlbumItem.vue'
+// import AlbumItem from '@/components/AlbumItem.vue'
 export default {
   name: 'Main',
   components: {
     MainHeader,
     Footer,
     Share,
-    AlbumItem
   },
   data() {
     return {
-      albums: [], //当前专辑列表
+      // albums: [], //当前专辑列表
       choosedCompany: '', // 当前选择的企业频道
       isSearching: false, // 12月1日添加，正在搜索
       inputSearchKey: '', // 12月1日添加，搜索关键词
@@ -346,13 +345,13 @@ export default {
       this.pageFlag = 'getSearchList'
     },
     async onPageChange () {
-      this.albums = []
+      // this.albums = []
       if (this.pageFlag === 'onRecommand') {
         const commandres = await getRecommend({pageNumber: this.pageNumber, pageSize: this.pageSize})
         this.total = commandres.data.total
         this.products = commandres.data.list
       } else if (this.pageFlag === 'checkChannel') this._getProductByPage()
-      if (this.pageNumber === 1) this.getAlbums()
+      // if (this.pageNumber === 1) this.getAlbums()
     },
     // 列表滚动加载
     handleListOnLoad() {
@@ -367,7 +366,7 @@ export default {
         window.open(routeData.href, '_blank')
         return
       }
-      this.albums = []
+      // this.albums = []
       this.setChoosedCompany('')
       this.pageFlag = 'checkChannel'
       this.isSearching = false // 12月1日添加，不在关键词搜索
@@ -394,22 +393,16 @@ export default {
         else this.searchKey = choosedCompany
         // else this.products = this.companyworks[index].works
         this._getProductByPage()
-        this.getAlbums()
+        // this.getAlbums()
       } else {
         [this.companys[index], this.companys[19]] = [this.companys[19], this.companys[index]]
         this.activeCompanyIndex = 19
       }
     },
-    async getAlbums () {
+    /* async getAlbums () {
       const res = await getAlbumBykey(this.searchKey)
       this.albums = res.data.list
-      // console.log('getAlbums', res.data.list)
-      /* res.data.list.forEach(async item => {
-        let res = await getAlbumDetail({albumId: item.id, pageNumber: 1, pageSize: 999})
-        this.albums.push(res.data)
-      }) */
-      // console.log('this.albums', this.albums)
-    },
+    }, */
     //  跳转详情
     toDetail(id) {
       // this.$router.push(`/product/detail/${id}`)

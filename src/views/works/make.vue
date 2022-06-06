@@ -221,8 +221,8 @@
                   <img v-if="choosedCompany" :src="require('@/assets/image/'+choosedCompany.trim()+'.png')">
                   <img v-else-if="userInfo.company" :src="require('@/assets/image/'+userInfo.company.trim()+'.png')">
                   <!-- <img v-else :src="require('@/assets/image/'+detail.channelName.trim()+'.png') || ''"> -->
-                  <div v-if="choosedCompany && (choosedCompany != '合肥柯锐' && choosedCompany != '合肥柯锐机房设备')" class="plus_lefttop_company">{{choosedCompany}}</div>
-                  <div v-else-if="userInfo.company && (userInfo.company != '合肥柯锐机房设备' && userInfo.company != '合肥柯锐')" class="plus_lefttop_company">{{userInfo.company}}</div>
+                  <div v-if="choosedCompany && (choosedCompany != '合肥柯锐' && choosedCompany != '合肥柯锐机房设备' && choosedCompany != '霍邱融媒')" class="plus_lefttop_company">{{choosedCompany}}</div>
+                  <div v-else-if="userInfo.company && (userInfo.company != '合肥柯锐机房设备' && userInfo.company != '合肥柯锐' && choosedCompany != '霍邱融媒')" class="plus_lefttop_company">{{userInfo.company}}</div>
                 </div>
               <!-- plus_logo下的公司名 -->
               </div>
@@ -267,7 +267,7 @@
                     v-if="formPreview.channel==='ea43393fdec54c6d92cd55a843cf05f5' || formPreview.channel==='54f28e4ec1ce44cdb5dfc9b3ef747f88'"
                     show-search
                     placeholder="单位"
-                    style="width: 120px; marginLeft:5px"
+                    style="width: 200px; marginLeft:5px"
                     @change="handleChange"
                   >
                     <a-select-option v-for="item in companies" :key="item.id" :value="item.company">{{item.company}}</a-select-option>
@@ -1291,7 +1291,7 @@ export default {
           formData.append('adUrl', JSON.stringify(addUrls)) // 插入的视频
           // console.log('adUrl')
 
-          formData.append('secondTitle', this.secondTitle + "-" + this.selectedLangs[0] + "-" + this.choosedCompany) // 二级标题、主语言、公司
+          formData.append('secondTitle', this.secondTitle + "@@@-@@@@" + this.selectedLangs[0] + "@@@-@@@@" + this.choosedCompany) // 二级标题、主语言、公司
           // console.log('secondTitle')
 
           if (this.productDes) formData.append('synopsis', this.productDes) // 视频简介
@@ -1631,13 +1631,13 @@ export default {
             left: 25px;
             // plus_左上角logo
             .plus_lefttop_logo {
-              height: 24px;
+              max-height: 50px;
               display: flex;
               flex-direction: column;
               align-items: center;
               img {
                 max-width: 100px;
-                max-height: 25px;
+                max-height: 50px;
               }
             }
             // plus_logo下的公司名
@@ -1717,7 +1717,7 @@ export default {
         padding: 30px 20px;
         // plus_频道选择
         .plus_channelwrap {
-          width: 220px;
+          width: 300px;
           display: flex;
           justify-content: space-between;
           align-items: center;

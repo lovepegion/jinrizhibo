@@ -45,10 +45,10 @@ export default {
             }
             new QRCode(this.$refs.qrCodeDiv, {
                 text: videoPlayUrl + 'detail/' + this.videoId,
-                width: 50,
-                height: 40,
+                width: 65,
+                height: 55,
                 colorDark: "#333333", //二维码颜色
-                colorLight: "#ffffff", //二维码背景色
+                colorLight: "#eee", //二维码背景色
                 correctLevel: QRCode.CorrectLevel.L //容错率，L/M/H
             })
         }
@@ -65,10 +65,10 @@ export default {
     mounted () {
         new QRCode(this.$refs.qrCodeDiv, {
             text: this.playUrl,
-            width: 50,
-            height: 40,
+            width: 65,
+            height: 55,
             colorDark: "#333333", //二维码颜色
-            colorLight: "#ffffff", //二维码背景色
+            colorLight: "#eee", //二维码背景色
             correctLevel: QRCode.CorrectLevel.L //容错率，L/M/H
         })
     }
@@ -77,7 +77,7 @@ export default {
 
 <style scoped lang="less">
 .wrap {
-    width: 300px;
+    width: 320px;
     padding: 10px;
     color: #000;
     display: flex;

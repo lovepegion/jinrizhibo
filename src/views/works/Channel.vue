@@ -1,10 +1,12 @@
 <template>
   <div class="channel-container">
     <Header />
-    <ul class="channel-bar">
+    <div class="bar-container">
+      <ul class="channel-bar">
       <ChannelListItem :channelItem="{id: '', company: '全部'}" @getCompanyWorks="getCompanyWorks(-1, $event)" :class="{channelActive: channelActiveIndex===-1}"/>
       <ChannelListItem v-for="(channelItem, index) in channelList" :key="channelItem.id" :channelItem="channelItem" @getCompanyWorks="getCompanyWorks(index, $event)" :class="{channelActive: channelActiveIndex===index}"/>
     </ul>
+    </div>
     <div class="channel-body">
       <!-- 顶部标题信息 -->
       <div class="top-container">
@@ -18,17 +20,17 @@
       </div>
       <div class="video-box">
         <!-- 视频框 -->
-        <div class="video-container">
+        <div class="video-container" ref="videocontainer">
           <!-- plus0_1_logo和公司 -->
           <div class="plus0_1_channel">
-            <div class="plus_logo_show" v-if="(currentVideo.choosedCompany != '合肥柯锐') && (currentVideo.choosedCompany != '合肥柯锐机房设备')">
+            <div class="plus_logo_show" v-if="currentVideo.choosedCompany != '合肥柯锐' && currentVideo.choosedCompany != '霍邱融媒' && currentVideo.choosedCompany != '合肥柯锐机房设备'">
               <img v-if="currentVideo.logoUrl" :src="(currentVideo.logoUrl.indexOf('http') != -1) ? currentVideo.logoUrl : (baseUrl + currentVideo.logoUrl)">
             </div>
             <div v-else>
               <img v-if="currentVideo.logoUrl" :src="(currentVideo.logoUrl.indexOf('http') != -1) ? currentVideo.logoUrl : (baseUrl + currentVideo.logoUrl)" style="maxWidth:120px; maxHeight:200px">
             </div>
             <div></div>
-            <div v-if="(currentVideo.choosedCompany != '合肥柯锐') && (currentVideo.choosedCompany != '合肥柯锐机房设备')" class="plus_company_name">
+            <div v-if="(currentVideo.choosedCompany != '合肥柯锐') && (currentVideo.choosedCompany != '合肥柯锐机房设备') && currentVideo.choosedCompany != '霍邱融媒'" class="plus_company_name">
               {{currentVideo.choosedCompany}}
             </div>
           </div>
@@ -40,28 +42,30 @@
           <video
             v-show="headVideoShow && !userVideoShow && !loadVideoShow"
             ref="headVideo"
+            :autoplay="currentVideo.headVideo"
             controls
             disablePictureInPicture
             controlsList="nodownload noremoteplayback"
             :src="(currentVideo.headVideo.indexOf('http') != -1) ? currentVideo.headVideo : (baseUrl + currentVideo.headVideo)"
-            style="width: 788px;height:443px"
+            style="width: 100%;height:100%"
           />
           <!-- plus0_1_1用户视频 -->
           <video
             v-show="!headVideoShow && userVideoShow && !loadVideoShow"
             ref="userVideo"
+            :autoplay="!currentVideo.headVideo"
             controls
             disablePictureInPicture
             controlsList="nodownload noremoteplayback"
             :src="(currentVideo.videoUrl.indexOf('http') != -1) ? currentVideo.videoUrl : (baseUrl + currentVideo.videoUrl)"
-            style="width: 788px;height:443px"
+            style="width: 100%;height:100%"
           />
           <!-- plus0_1_2插播的视频 -->
           <video
             v-show="!headVideoShow && !userVideoShow && loadVideoShow"
             ref="loadVideo"
             :src="(currentVideo.insertVideo.indexOf('http') != -1) ? currentVideo.insertVideo : (baseUrl + currentVideo.insertVideo)"
-            style="width: 788px;height:443px"
+            style="width: 100%;height:100%"
             controls
           ></video>
           <!-- plus0_3_语言切换 -->
@@ -108,7 +112,7 @@
         </div>
       </div>
       <!-- 底部分享点赞评论 -->
-      <div class="foot-into">
+      <div class="foot-into" v-if="companyVideos.length">
         <ChannelShare :videoUrl="currentVideo.videoUrl" :title="currentVideo.title" :videoId="currentVideo.id"></ChannelShare>
         <div>
 					<a-button type="primary" @click="doAttention(1, 1)" v-if="!currentVideo.focusUserFlag" :disabled="currentVideo.userId === $store.state.userInfo.id"><a-icon type="heart" />关注</a-button>
@@ -122,11 +126,11 @@
 				</div>
       </div>
       <!-- 文本内容 -->
-      <div class="detail-content">
+      <div class="detail-content" v-if="companyVideos.length">
         {{ voiceContent }}
       </div>
       <!-- 评论 -->
-      <div class="plus1_wrap">
+      <div class="plus1_wrap" v-if="companyVideos.length">
         <div style="fontSize:18px;marginBottom:20px;textAlign:left">{{comments.length}}条评论</div>
         <!-- plus1_1_发表评论,只有登录才显示 -->
         <div v-if="$store.state.userInfo.id" class="plus1_1_warp">
@@ -164,6 +168,28 @@ import CommentItem from '@/components/commentItem/CommentItem.vue'
 import { getChannelCompany, getProductByPage, getProductDetail, collectionProduct, follow } from '@/api/make'
 import { getAlbumBykey } from '@/api/album.js'
 import { collectProduct, likeProduct, followProduct, getComments, sendComment } from '@/api/update.js'
+import settingVue from './setting.vue'
+const initCurrentVideo = {
+  title: '',
+  source: '',
+  createDate: '',
+  headVideo: '',
+  videoUrl: '',
+  insertVideo: '',
+  adTime: '',
+  insertSeconds: 0,
+  userId: '',
+  nickname: '',
+  focusUserFlag: false,
+  collectionFlag: false,
+  likeFlag: false,
+  id: '',
+  secondTitle: '',
+  mainLang: '',
+  choosedCompany: '',
+  logoUrl: '',
+  videoUrls: [{videoUrl:'', language:''}]
+}
 export default {
   name: 'Channel',
   components: {
@@ -209,27 +235,7 @@ export default {
         keyWord: ''
       },
       //当前选中的视频
-      currentVideo: {
-        title: '',
-        source: '',
-        createDate: '',
-        headVideo: '',
-        videoUrl: '',
-        insertVideo: '',
-        adTime: '',
-        insertSeconds: 0,
-        userId: '',
-        nickname: '',
-        focusUserFlag: false,
-        collectionFlag: false,
-        likeFlag: false,
-        id: '',
-        secondTitle: '',
-        mainLang: '',
-        choosedCompany: '',
-        logoUrl: '',
-        videoUrls: [{videoUrl:'', language:''}]
-      },
+      currentVideo: {...initCurrentVideo},
       comments: [], //评论列表
       commentContent: '', //要评论的内容
       voiceContent: '', //当前显示的语言文本
@@ -241,6 +247,9 @@ export default {
     }
   },
   methods: {
+    fullScreen () {
+      this.$refs.videocontainer.requestFullscreen()
+    },
     onSwitch (index, lang) {
       console.log('onswitch')
 			this.switchedIndex = index
@@ -330,7 +339,10 @@ export default {
           this.userVideoShow = false
         }
         let tempArray = ['', '', '']
-        if (res.data.secondTitle) tempArray = res.data.secondTitle.split("-")
+        let separator
+        if (res.data.secondTitle && res.data.secondTitle.indexOf("@@@-@@@@") > -1) separator = "@@@-@@@@"
+        else separator = "-"
+        if (res.data.secondTitle) tempArray = res.data.secondTitle.split(separator)
         const tempArray1 = JSON.parse(res.data.cover)
         this.currentVideo = {
           ...res.data,
@@ -414,6 +426,7 @@ export default {
     },
     //滚动获取公司视频
     handleListOnLoad() {
+      console.log('this.handlelistonload')
       this.langs.splice(0, this.langs.length)
       this.noChineseLangs.splice(0, this.noChineseLangs.length)
       if (!this.scrollFinished) {
@@ -421,6 +434,10 @@ export default {
         getProductByPage(this.getCompanyVideosParams).then(res => {
           let tempList = res.data.list.filter(item => (item.status==='1' || item.status==='2'))
           this.companyVideos = [...this.companyVideos, ...tempList]
+          if (!this.companyVideos.length) {
+            this.currentVideo = {...initCurrentVideo}
+            return
+          }
           if (this.isFirstLoad && this.companyVideos.length) {
             getProductDetail({id: this.companyVideos[0].id}).then(res => {
               let headVideo = ''
@@ -439,7 +456,10 @@ export default {
                 this.userVideoShow = false
               }
               let tempArray = ['', '', '']
-              if (res.data.secondTitle) tempArray = res.data.secondTitle.split("-")
+              let separator
+							if (res.data.secondTitle && res.data.secondTitle.indexOf("@@@-@@@@") > -1) separator = "@@@-@@@@"
+							else separator = "-"
+              if (res.data.secondTitle) tempArray = res.data.secondTitle.split(separator)
               const tempArray1 = JSON.parse(res.data.cover)
               console.log('temparray1', tempArray1)
               this.currentVideo = {
@@ -474,6 +494,18 @@ export default {
 
               if (this.isChinese || (this.langs.length === this.noChineseLangs.length)) this.voiceContent = this.contentArrays[0]
               else this.voiceContent = this.contentArrays[1]
+
+              if (this.currentVideo.headVideo) {
+                console.log('this.currentVideo.headVideo is true', this.currentVideo)
+                this.showSecondTitle = false
+                this.showSynopsis = false
+                this.showChangeLang = false
+              } else {
+                console.log('this.currentVideo.headVideo is false', this.currentVideo)
+                this.showSecondTitle = true
+                this.showSynopsis = true
+                this.showChangeLang = true
+              }
               this._getgetComments(this.currentVideo.id)
             })
             this.isFirstLoad = false
@@ -556,6 +588,8 @@ export default {
         // userVideoRef.muted = true
         userVideoRef.addEventListener('timeupdate', this.playLoadVideo)
         this.initHeadVedio()
+        this.currenVideoIndex += 1
+        if (this.companyVideos[this.currenVideoIndex]) this.getCurrentVideo (this.currenVideoIndex, this.companyVideos[this.currenVideoIndex])
       }
       loadVideoRef.onended = this.continueUserVideo
     },
@@ -573,14 +607,24 @@ export default {
   flex-direction: column;
   height: 100%;
   background: #F2F2F2;
-  .channel-bar {
+  .bar-container {
     width: 100%;
     height: 45px;
     background: url('../../assets/image/div_bg.png') repeat-x;
     display: flex;
     justify-content: center;
-    .channelActive {
-      background-color: skyblue;
+    .channel-bar {
+      margin-left: 0 auto;
+      width: 90%;
+      height: 54px;
+      overflow-y: hidden;
+      overflow-x: auto;
+      // background: url('../../assets/image/div_bg.png') repeat-x;
+      display: flex;
+      justify-content: flex-start;
+      .channelActive {
+        background-color: skyblue;
+      }
     }
   }
   .channel-body {
@@ -591,6 +635,8 @@ export default {
       display:flex;
       .video-container {
         position: relative;
+        width: 788px;
+        height:443px;
         // plus0_1_logo和公司
         .plus0_1_channel {
           font-size: 20px;
