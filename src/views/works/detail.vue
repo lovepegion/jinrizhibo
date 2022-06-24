@@ -23,15 +23,15 @@
 					<!-- plus0_1_logo和公司 -->
 					<div class="plus0_1_channel">
 						<!-- plus_logo -->
-						<div class="plus_logo_show" v-if="(choosedCompany != '合肥柯锐') && (choosedCompany != '合肥柯锐机房设备') && (choosedCompany != '霍邱融媒')">
+						<div v-if="companiesOffTag.indexOf(choosedCompany)<=-1" class="plus_logo_show">
 							<img v-if="logoUrl" :src="(logoUrl.indexOf('http') != -1) ? logoUrl : (baseUrl + logoUrl)">
 						</div>
-						<div v-else>
-							<img v-if="logoUrl" :src="(logoUrl.indexOf('http') != -1) ? logoUrl : (baseUrl + logoUrl)" style="maxWidth:120px; maxHeight:200px">
+						<div v-else  class="plus_logo_show">
+							<img v-if="logoUrl" :src="(logoUrl.indexOf('http') != -1) ? logoUrl : (baseUrl + logoUrl)">
 						</div>
 						<div></div>
 						<!-- plus_公司 -->
-						<div v-if="(choosedCompany != '合肥柯锐') && (choosedCompany != '合肥柯锐机房设备') && (choosedCompany != '霍邱融媒')" class="plus_company_name">
+						<div v-if="companiesOffTag.indexOf(choosedCompany)<=-1" class="plus_company_name">
 							{{choosedCompany}}
 						</div>
 					</div>
@@ -167,6 +167,7 @@ export default {
 	mixins: [WeixinShare], // 包含wechatShare方法
 	data() {
 		return {
+			companiesOffTag: ['合肥柯锐', '合肥柯锐机房设备', '霍邱融媒', '宿松融媒', '安徽天堂寨', '掌上安庆', '安庆新闻网'],
 			window,
 			isAlbumPlaying: false, //是否在播放专辑
 			showSecondTitle: true,
@@ -327,7 +328,7 @@ export default {
 					if (tempArray.length > 1 && tempArray.length !== 3) this.logoUrl = tempArray[tempArray.length - 1] // 分离logo图片
 
 					if (this.detail.status !== '1') {
-						if (this.$store.state.userInfo.id && this.$store.state.userInfo.id==='_3eef5c9f23ce49f1ac45c34d87897598') {
+						if (this.$store.state.userInfo.id && (this.$store.state.userInfo.id==='_3eef5c9f23ce49f1ac45c34d87897598' || this.detail.userId === this.$store.userInfo.id)) {
 							this.likeFlag = res.data.likeFlag
 							this.collectionFlag = res.data.collectionFlag
 							// console.log('detail', this.detail)

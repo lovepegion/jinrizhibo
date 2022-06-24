@@ -218,11 +218,15 @@
               <div class="plus_logo_company">
               <!-- plus_左上角logo -->
                 <div class="plus_lefttop_logo">
-                  <img v-if="choosedCompany" :src="require('@/assets/image/'+choosedCompany.trim()+'.png')">
-                  <img v-else-if="userInfo.company" :src="require('@/assets/image/'+userInfo.company.trim()+'.png')">
+                  <img v-if="choosedCompany && logoIndex != '-1'" :src="require('@/assets/image/'+logoIndex.trim()+'.png')">
+                  <img v-else-if="choosedCompany && logoIndex === '-1' && customLogoCompanies.indexOf(choosedCompany.trim())>-1" :src="require('@/assets/image/'+choosedCompany.trim()+'.png')">
+                  <img v-else-if="userInfo.company && customLogoCompanies.indexOf(choosedCompany.trim())===-1" src="">
+                  <img v-else-if="userInfo.company && userInfo.logoIndex != '-1'" :src="require('@/assets/image/'+userInfo.logoIndex.trim()+'.png')">
+                  <img v-else-if="customLogoCompanies.indexOf(userInfo.company)>-1" :src="require('@/assets/image/'+userInfo.company.trim()+'.png')">
+                  <img v-else src="">
                   <!-- <img v-else :src="require('@/assets/image/'+detail.channelName.trim()+'.png') || ''"> -->
-                  <div v-if="choosedCompany && (choosedCompany != '合肥柯锐' && choosedCompany != '合肥柯锐机房设备' && choosedCompany != '霍邱融媒')" class="plus_lefttop_company">{{choosedCompany}}</div>
-                  <div v-else-if="userInfo.company && (userInfo.company != '合肥柯锐机房设备' && userInfo.company != '合肥柯锐' && choosedCompany != '霍邱融媒')" class="plus_lefttop_company">{{userInfo.company}}</div>
+                  <div v-if="choosedCompany && companiesOffTag.indexOf(choosedCompany)<=-1" class="plus_lefttop_company">{{choosedCompany}}</div>
+                  <div v-else-if="!choosedCompany && userInfo.company && companiesOffTag.indexOf(userInfo.company)<=-1" class="plus_lefttop_company">{{userInfo.company}}</div>
                 </div>
               <!-- plus_logo下的公司名 -->
               </div>
@@ -270,7 +274,7 @@
                     style="width: 200px; marginLeft:5px"
                     @change="handleChange"
                   >
-                    <a-select-option v-for="item in companies" :key="item.id" :value="item.company">{{item.company}}</a-select-option>
+                    <a-select-option v-for="(item, index) in companies" :key="item.id" :value="index">{{item.company}}</a-select-option>
                   </a-select>
                 </div>
               </a-form-model-item>
@@ -482,6 +486,8 @@ export default {
   },
   data() {
     return {
+      companiesOffTag: ['合肥柯锐', '合肥柯锐机房设备', '霍邱融媒', '宿松融媒', '安徽天堂寨', '掌上安庆', '安庆新闻网'],
+      customLogoCompanies: ['安徽省股交中心', '安徽天堂寨', '合肥柯锐', '合肥柯锐机房设备', '霍邱融媒', '宿松融媒', '掌上安庆'],
       langs: [ // 语言种类列表
         '普通话', '英语', '台湾话', '东北话', '四川话', '陕西话', '广东话', '湖南话', 
         '河南话', '山东话', '湖北话', '安徽合肥话', '内蒙古方言', '德语', '法语', '印地语', 
@@ -519,6 +525,7 @@ export default {
       insertloading: false, // 视频插入进度
       companies: [], // 选择的公司列表
       choosedCompany: '', // 选择的公司
+      logoIndex: '-1', //公司的名
       haslogo: false, // 是否加入了logo
       imgFileData: '', // img图片的file类型数据
       mode: 1,
@@ -695,15 +702,29 @@ export default {
     // 栏目切换时删除之前选择的company
     async onSelectChange (channelname, channelId) {
       this.choosedCompany = ''
+      this.logoIndex ='-1'
       this.imgFileData = ''
       if (this.userInfo.company) {
         this.choosedCompany = this.userInfo.company
-        let imgurl = require('@/assets/image/'+this.userInfo.company+'.png')
-        let filename = this.userInfo.company+'.png'
-        this.imgFileData = this.handleImgToBase64(imgurl, filename, (res) => {
-          this.imgFileData = res
-          // console.log('imgFileData', this.imgFileData)
-        })
+        this.logoIndex = this.userInfo.logoIndex
+        let imgurl
+        let filename
+        if (this.userInfo.logoIndex != '-1') {
+          imgurl = require('@/assets/image/'+this.userInfo.logoIndex+'.png')
+          filename = this.userInfo.logoIndex+'.png'
+        } else if (this.customLogoCompanies.indexOf(this.userInfo.company.trim()) > -1) {
+          imgurl = require('@/assets/image/'+this.userInfo.company+'.png')
+          filename = this.userInfo.company+'.png'
+        } else {
+          imgurl = ''
+          filename = ''
+        }
+        if (imgurl) {
+          this.imgFileData = this.handleImgToBase64(imgurl, filename, (res) => {
+            this.imgFileData = res
+            // console.log('imgFileData', this.imgFileData)
+          })
+        }
       }
       this.formPreview.channel = channelId
       this.choosedChannel = channelname
@@ -736,16 +757,31 @@ export default {
       this.insertSeconds = timeArray[0] * 60 + timeArray[1] * 1
     },
     // 虚拟电视频道选择公司
-    handleChange (value) {
-      this.choosedCompany = value
-      let imgurl = require('@/assets/image/'+value+'.png')
-      let filename = value+'.png'
+    handleChange (index) {
+      this.choosedCompany = this.companies[index].company
+      this.logoIndex = this.companies[index].logoIndex
+      let imgurl
+      let filename
+      if (this.logoIndex != '-1') {
+        imgurl = require('@/assets/image/'+this.logoIndex+'.png')
+        filename = this.logoIndex+'.png' 
+      } else if(this.customLogoCompanies.indexOf(this.choosedCompany.trim()) > -1) {
+        imgurl = require('@/assets/image/'+this.choosedCompany+'.png')
+        filename = this.choosedCompany+'.png' 
+      } else {
+        imgurl = ''
+        filename = ''
+      }
       // let imgurl = 'https://gimg2.baidu.com/image_search/src=http%3A%2F%2Fimg9.3lian.com%2Fc1%2Fvec2014%2F35%2F31.jpg'
       // this.insertlogoUrl = require('@/assets/image/' + this.choosedCompany + '.png')
-      this.imgFileData = this.handleImgToBase64(imgurl, filename, (res) => {
+      if (imgurl) {
+        this.imgFileData = this.handleImgToBase64(imgurl, filename, (res) => {
           this.imgFileData = res
           // console.log('imgFileData', this.imgFileData)
         })
+      } else {
+        this.imgFileData = ''
+      }
     },
     // plus接收子组件传来的语言
     getSelectedLangs (value, chinese) {

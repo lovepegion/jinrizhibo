@@ -11,7 +11,7 @@
       <!-- 顶部标题信息 -->
       <div class="top-container">
         <p><span v-if="currentCompany" class="company">{{currentCompany}}</span><span>虚拟电视频道</span></p>
-        <h1>{{currentVideo.title}}</h1>
+        <h1 style="textAlign:left">{{currentVideo.title}}</h1>
         <p style="fontSize:12px">
           <span v-if="currentVideo.source" style="marginRight: 20px">来源：{{currentVideo.source}} </span>
           <span style="marginRight:40px">作者：{{currentVideo.nickname}}</span>
@@ -23,14 +23,14 @@
         <div class="video-container" ref="videocontainer">
           <!-- plus0_1_logo和公司 -->
           <div class="plus0_1_channel">
-            <div class="plus_logo_show" v-if="currentVideo.choosedCompany != '合肥柯锐' && currentVideo.choosedCompany != '霍邱融媒' && currentVideo.choosedCompany != '合肥柯锐机房设备'">
+            <div v-if="companiesOffTag.indexOf(currentVideo.choosedCompany)<=-1" class="plus_logo_show">
               <img v-if="currentVideo.logoUrl" :src="(currentVideo.logoUrl.indexOf('http') != -1) ? currentVideo.logoUrl : (baseUrl + currentVideo.logoUrl)">
             </div>
-            <div v-else>
-              <img v-if="currentVideo.logoUrl" :src="(currentVideo.logoUrl.indexOf('http') != -1) ? currentVideo.logoUrl : (baseUrl + currentVideo.logoUrl)" style="maxWidth:120px; maxHeight:200px">
+            <div v-else class="plus_logo_show">
+              <img v-if="currentVideo.logoUrl" :src="(currentVideo.logoUrl.indexOf('http') != -1) ? currentVideo.logoUrl : (baseUrl + currentVideo.logoUrl)">
             </div>
             <div></div>
-            <div v-if="(currentVideo.choosedCompany != '合肥柯锐') && (currentVideo.choosedCompany != '合肥柯锐机房设备') && currentVideo.choosedCompany != '霍邱融媒'" class="plus_company_name">
+            <div v-if="companiesOffTag.indexOf(currentVideo.choosedCompany)<=-1" class="plus_company_name">
               {{currentVideo.choosedCompany}}
             </div>
           </div>
@@ -203,6 +203,7 @@ export default {
   },
   data() {
     return {
+      companiesOffTag: ['合肥柯锐', '合肥柯锐机房设备', '霍邱融媒', '宿松融媒', '安徽天堂寨', '掌上安庆', '安庆新闻网'],
       chinesArray: ['普通话', '台湾话', '东北话', '四川话', '陕西话', '广东话', '湖南话', '河南话', '山东话', '湖北话', '安徽合肥话', '内蒙古方言'],
       showSecondTitle: true,
 			showSynopsis: true,
@@ -790,6 +791,7 @@ export default {
       }
     }
     .top-container {
+      margin-top: 20px;
       height: 110px;
       display: flex;
       flex-direction: column;
