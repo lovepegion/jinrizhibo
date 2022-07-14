@@ -20,81 +20,93 @@
 				</div>
 				<!-- plus0视频框 -->
 				<div class="plus0_wrap1" ref="videowrap">
-					<!-- plus0_1_logo和公司 -->
-					<div class="plus0_1_channel">
-						<!-- plus_logo -->
-						<div v-if="companiesOffTag.indexOf(choosedCompany)<=-1" class="plus_logo_show">
-							<img v-if="logoUrl" :src="(logoUrl.indexOf('http') != -1) ? logoUrl : (baseUrl + logoUrl)">
+						<!-- plus0_1_logo和公司 -->
+						<div :class="isFullScreen?'logocompanyfull':'plus0_1_channel'">
+							<!-- plus_logo -->
+							<div v-if="companiesOffTag.indexOf(choosedCompany)<=-1" class="plus_logo_show">
+								<img v-if="logoUrl" :src="(logoUrl.indexOf('http') != -1) ? logoUrl : (baseUrl + logoUrl)">
+							</div>
+							<div v-else  class="plus_logo_show">
+								<img v-if="logoUrl" :src="(logoUrl.indexOf('http') != -1) ? logoUrl : (baseUrl + logoUrl)">
+							</div>
+							<div></div>
+							<!-- plus_公司 -->
+							<div v-if="companiesOffTag.indexOf(choosedCompany)<=-1" class="plus_company_name">
+								{{choosedCompany}}
+							</div>
 						</div>
-						<div v-else  class="plus_logo_show">
-							<img v-if="logoUrl" :src="(logoUrl.indexOf('http') != -1) ? logoUrl : (baseUrl + logoUrl)">
+						<!-- plus0_1_1片头  v-show="headVideoUrl"-->
+						<video
+							v-show="headVideoShow && !userVideoShow && !loadVideoShow"
+							:controls="haveControls"
+							:autoplay="isAlbumPlaying"
+							:poster="(window.navigator.userAgent.indexOf('iPhone') > -1 || window.navigator.userAgent.indexOf('Android') > -1) ? (JSON.parse(detail.cover)[0].indexOf('http') > -1 ? JSON.parse(detail.cover)[0] : '/webfile' + JSON.parse(detail.cover)[0]) : ''"
+							ref="headVideo"
+							disablePictureInPicture
+							controlsList="nodownload noremoteplayback"
+							:src="(headVideoUrl.indexOf('http') != -1) ? headVideoUrl : (baseUrl + headVideoUrl)"
+							width="100%"
+							height="100%"
+						>
+							<source :src="(headVideoUrl.indexOf('http') != -1) ? detail.videoUrl : (baseUrl + detail.videoUrl)" type="video/mp4">
+						</video>
+						<!-- plus0_1_1用户视频 -->
+						<!-- :poster="(window.navigator.userAgent.indexOf('iPhone') > -1) ? JSON.parse(detail.cover)[0] : ''" -->
+												<!-- @loadeddata="getFirstImageCover" -->
+						<video
+							v-show="!headVideoShow && userVideoShow && !loadVideoShow"
+							ref="userVideo"
+							:controls="haveControls"
+							:autoplay="isAlbumPlaying"
+							:poster="(window.navigator.userAgent.indexOf('iPhone') > -1 || window.navigator.userAgent.indexOf('Android') > -1) ? (JSON.parse(detail.cover)[0].indexOf('http') > -1 ? JSON.parse(detail.cover)[0] : '/webfile' + JSON.parse(detail.cover)[0]) : ''"
+							x5-video-player-type="h5"
+							x5-playsinline  playsinline webkit-playsinline="true"
+							disablePictureInPicture
+							controlsList="nodownload noremoteplayback"
+							:src="(detail.videoUrl.indexOf('http') != -1) ? detail.videoUrl : (baseUrl + detail.videoUrl)"
+							width="100%"
+							height="100%"
+						>
+							<source :src="(detail.videoUrl.indexOf('http') != -1) ? detail.videoUrl : (baseUrl + detail.videoUrl)" type="video/mp4">
+						</video>
+						<!-- plus0_1_2插播的视频 -->
+						<video
+							v-show="!headVideoShow && !userVideoShow && loadVideoShow"
+							:controls="haveControls"
+							ref="loadVideo"
+							:src="(adUrl.indexOf('http') != -1) ? adUrl : (baseUrl + adUrl)"
+							width="100%"
+							height="100%"
+						></video>
+						<!-- <div class="fullbtn">
+							<span v-if="!this.fullflag" class="iconfont icon-quanping1"></span>
+							<span v-else class="iconfont icon-tuichuquanping"></span>
+						</div> -->
+						<!-- plus0_2_视频简介 -->
+						<div :class="isFullScreen?'deswrapfull':'plus_des_wrap1'">
+							<div class="plus_des_main1" v-if="secondTitle && showSecondTitle">{{secondTitle}}</div>
+							<div class="plus_des_detail1" v-if="synopsis && showSynopsis">{{synopsis}}</div>
 						</div>
-						<div></div>
-						<!-- plus_公司 -->
-						<div v-if="companiesOffTag.indexOf(choosedCompany)<=-1" class="plus_company_name">
-							{{choosedCompany}}
+						<!-- 自定义controller -->
+						<!-- 片头控制器 -->
+						<PlayController v-if="!haveControls && headVideoShow && !userVideoShow && !loadVideoShow" :targetVideo="$refs.headVideo" :fullContainer="$refs.videowrap" :autoplay="isAlbumPlaying" :currentIndex="0" :isLoadBegin="false"/>
+						<!-- 用户视频控制器 -->
+						<PlayController v-if="!haveControls && !headVideoShow && userVideoShow && !loadVideoShow" :targetVideo="$refs.userVideo" :fullContainer="$refs.videowrap" :autoplay="isAlbumPlaying" :changeLangFlag="changeLangFlag" :currentIndex="0" :isLoadBegin="false" @interTact="interTact"/>
+						<!-- 插入视频控制器 -->
+						<PlayController v-if="!haveControls && !headVideoShow && !userVideoShow && loadVideoShow" :targetVideo="$refs.loadVideo" :fullContainer="$refs.videowrap" :autoplay="false" :currentIndex="0" :isLoadBegin="isLoadBegin"/>
+						<!-- plus0_3_语言切换 -->
+						<div class="plus0_3_langChoose" v-if="videoUrls.length && showChangeLang">
+							<!-- <select class="plus0_3_langChoose_item" v-model="switchedIndex" @change="onSwitch()" multiple>
+								<option value='' disabled selected>语言切换</option>
+								<option :value="-1">{{mainLang}}</option>
+								<option v-for="(item, index) in videoUrls" :key="index" :value="index">{{item.language}}</option>
+							</select> -->
+							<ul class="plus0_3_langchooseitem">
+								<!-- <li class="plus0_3_langchooseitem_title">语音切换</li> -->
+								<li @click="onSwitch(-1, mainLang)" :class="[isFullScreen?'itemfull':'plus0_3_langchooseitem_item', {'plus0_3_langchooseitem_active':switchedIndex===-1}]">{{mainLang}}</li>
+								<li v-for="(item, index) in videoUrls" :key="index" @click="onSwitch(index, item.language)" :class="[isFullScreen?'itemfull':'plus0_3_langchooseitem_item', {'plus0_3_langchooseitem_active':switchedIndex===index}]">{{item.language}}</li>
+							</ul>
 						</div>
-					</div>
-					<!-- plus0_1_1片头 -->
-					<video
-						v-show="headVideoUrl"
-						:autoplay="isAlbumPlaying"
-						:poster="(window.navigator.userAgent.indexOf('iPhone') > -1 || window.navigator.userAgent.indexOf('Android') > -1) ? (JSON.parse(detail.cover)[0].indexOf('http') > -1 ? JSON.parse(detail.cover)[0] : '/webfile' + JSON.parse(detail.cover)[0]) : ''"
-						ref="headVideo"
-						controls
-						disablePictureInPicture
-						controlsList="nodownload noremoteplayback"
-						:src="(headVideoUrl.indexOf('http') != -1) ? headVideoUrl : (baseUrl + headVideoUrl)"
-						style="width: 100%"
-					>
-						<source :src="(headVideoUrl.indexOf('http') != -1) ? detail.videoUrl : (baseUrl + detail.videoUrl)" type="video/mp4">
-					</video>
-					<!-- plus0_1_1用户视频 -->
-					<!-- :poster="(window.navigator.userAgent.indexOf('iPhone') > -1) ? JSON.parse(detail.cover)[0] : ''" -->
-											<!-- @loadeddata="getFirstImageCover" -->
-					<video
-						ref="userVideo"
-						:autoplay="isAlbumPlaying"
-						:poster="(window.navigator.userAgent.indexOf('iPhone') > -1 || window.navigator.userAgent.indexOf('Android') > -1) ? (JSON.parse(detail.cover)[0].indexOf('http') > -1 ? JSON.parse(detail.cover)[0] : '/webfile' + JSON.parse(detail.cover)[0]) : ''"
-						controls
-						x5-video-player-type="h5"
-						x5-playsinline  playsinline webkit-playsinline="true"
-						disablePictureInPicture
-						controlsList="nodownload noremoteplayback"
-						:src="(detail.videoUrl.indexOf('http') != -1) ? detail.videoUrl : (baseUrl + detail.videoUrl)"
-						style="width: 100%;objectFit:cover"
-					>
-						<source :src="(detail.videoUrl.indexOf('http') != -1) ? detail.videoUrl : (baseUrl + detail.videoUrl)" type="video/mp4">
-					</video>
-					<!-- plus0_1_2插播的视频 -->
-					<video
-						ref="loadVideo"
-						:src="(adUrl.indexOf('http') != -1) ? adUrl : (baseUrl + adUrl)"
-						style="width: 100%; display: none"
-						controls
-					></video>
-					<!-- <div class="fullbtn">
-						<span v-if="!this.fullflag" class="iconfont icon-quanping1"></span>
-						<span v-else class="iconfont icon-tuichuquanping"></span>
-					</div> -->
-					<!-- plus0_2_视频简介 -->
-					<div class="plus_des_wrap1">
-						<div class="plus_des_main1" v-if="secondTitle && showSecondTitle">{{secondTitle}}</div>
-						<div class="plus_des_detail1" v-if="synopsis && showSynopsis">{{synopsis}}</div>
-					</div>
-					<!-- plus0_3_语言切换 -->
-					<div class="plus0_3_langChoose" v-if="videoUrls.length && showChangeLang">
-						<!-- <select class="plus0_3_langChoose_item" v-model="switchedIndex" @change="onSwitch()" multiple>
-							<option value='' disabled selected>语言切换</option>
-							<option :value="-1">{{mainLang}}</option>
-							<option v-for="(item, index) in videoUrls" :key="index" :value="index">{{item.language}}</option>
-						</select> -->
-						<ul class="plus0_3_langchooseitem">
-							<!-- <li class="plus0_3_langchooseitem_title">语音切换</li> -->
-							<li @click="onSwitch(-1, mainLang)" class="plus0_3_langchooseitem_item" :class="{plus0_3_langchooseitem_active:switchedIndex===-1}">{{mainLang}}</li>
-							<li v-for="(item, index) in videoUrls" :key="index" @click="onSwitch(index, item.language)" class="plus0_3_langchooseitem_item" :class="{plus0_3_langchooseitem_active:switchedIndex===index}">{{item.language}}</li>
-						</ul>
-					</div>
 				</div>
 				<div class="detail-content">
 					{{ voiceContent }}
@@ -161,9 +173,10 @@ import { sendComment, getComments, collectProduct, likeProduct, followProduct } 
 import { getAlbumDetail } from '@/api/album.js'
 import CommentItem from '@/components/commentItem/CommentItem.vue'
 import WeixinShare from '@/components/weixinshare/WeixinShare.vue'
+import PlayController from '@/components/PlayController'
 export default {
 	name: 'Detail',
-	components: { CommentItem },
+	components: { CommentItem, PlayController },
 	mixins: [WeixinShare], // 包含wechatShare方法
 	data() {
 		return {
@@ -174,7 +187,7 @@ export default {
 			showSynopsis: true,
 			showChangeLang: true,
 			isPhone: false,
-			fullflag: false, // 是否全屏
+			isFullScreen: false, // 是否全屏
 			baseUrl: process.env.VUE_APP_ZB_DOMAIN_FILE, // 播放视频的基准url
 			detail: { videoUrl:'' },
 			likeFlag: false, // 点赞状态
@@ -207,13 +220,24 @@ export default {
 			albumId: '', //
 			playIndex: 0, // 当前播放的专辑index
 			albumProducts: [], //专辑包含的作品
-			autoPlay: true //专辑自动播放
+			autoPlay: true, //专辑自动播放
+			headVideoShow: false, //展示片头视频
+      userVideoShow: true, //展示用户视频
+      loadVideoShow: false, //展示插入视频
+			isLoadBegin: false, //是否开始播放插播视频，用于控制器切换播放按钮
+			changeLangFlag: -1, //语言切换，如果页面暂停，则更改播放图标
+			targetVideo:'',
+			haveControls: false
 		}
 	},
 	computed: {
 		...mapState(['choosedCompanyChannel', 'userInfo'])
 	},
 	methods: {
+		interTact () {
+			this.detail.videoUrl = this.detail.videoUrl + '?ok=true'
+			console.log('detailvideourl:' + this.detail.videoUrl)
+		},
 		toPlayDetail (item, index) {
 			this.$router.push(`/product/detail/${item.id}/album/${this.albumId}/${index}`)
 			window.location.reload()
@@ -268,7 +292,6 @@ export default {
 				})
 			}
 
-
 			const userVideoRef = this.$refs.userVideo
 			this.switchedIndex = index
 			if (this.switchedIndex === -1) {
@@ -282,6 +305,7 @@ export default {
 				else userVideoRef.src = this.baseUrl + this.videoUrls[this.switchedIndex].videoUrl
 				userVideoRef.load()
 			}
+			this.changeLangFlag = index
 		},
 		async doAttention(flag, type) {
 			this._follow(flag)
@@ -377,6 +401,10 @@ export default {
 						try {
 							this.adUrl = JSON.parse(res.data.adUrl).insertVideo
 							this.headVideoUrl = JSON.parse(res.data.adUrl).headVideo
+							if (this.headVideoUrl.trim()) {
+								this.headVideoShow = true
+								this.userVideoShow = false
+							}
 						} catch (e) {
 							this.adUrl = res.data.adUrl || ''
 							this.headVideoUrl = ''
@@ -460,21 +488,26 @@ export default {
 		},
 		// 中间插播视频播放
 		playLoadVideo () {
+			this.isLoadBegin = true
 			const userVideoRef = this.$refs.userVideo
 			const loadVideoRef = this.$refs.loadVideo
 			if (this.adUrl) {
 				if (this.insertSeconds && (userVideoRef.currentTime > this.insertSeconds)) {
 					userVideoRef.pause() // 原视频暂停
-					userVideoRef.style.display = 'none' // 影藏原视频
-					loadVideoRef.style.display = 'block' // 展示插播的视频
+					// userVideoRef.style.display = 'none' // 影藏原视频
+					// loadVideoRef.style.display = 'block' // 展示插播的视频
+					this.userVideoShow = false // 影藏原视频
+          this.loadVideoShow = true // 展示插播的视频
 					setTimeout(() => {
 						loadVideoRef.play() // 播放插播的视频
 					}, 200)
 				}	else if ((userVideoRef.currentTime !==0 && this.adTime === '开始') || ((userVideoRef.currentTime > userVideoRef.duration / 2) && this.adTime === '中间') || ((userVideoRef.currentTime > userVideoRef.duration - 0.1) && this.adTime === '结尾')) {
 					userVideoRef.pause() // 原视频暂停
 					// userVideoRef.muted = false
-					userVideoRef.style.display = 'none' // 影藏原视频
-					loadVideoRef.style.display = 'block' // 展示插播的视频
+					// userVideoRef.style.display = 'none' // 影藏原视频
+					// loadVideoRef.style.display = 'block' // 展示插播的视频
+					this.userVideoShow = false // 影藏原视频
+          this.loadVideoShow = true // 展示插播的视频
 					setTimeout(() => {
 						loadVideoRef.play() // 播放插播的视频
 					}, 200)
@@ -486,8 +519,10 @@ export default {
 			const userVideoRef = this.$refs.userVideo
 			const loadVideoRef = this.$refs.loadVideo
 
-			loadVideoRef.style.display = 'none' // 移除插播的视频
-			userVideoRef.style.display = 'block' // 展示原视频
+			// loadVideoRef.style.display = 'none' // 移除插播的视频
+			// userVideoRef.style.display = 'block' // 展示原视频
+			this.loadVideoShow = false // 移除插播的视频
+      this.userVideoShow = true // 展示原视频
 			userVideoRef.removeEventListener('timeupdate', this.playLoadVideo) // 移除原视频的监听播放插播视频事件
 			userVideoRef.play() // 原视频继续播放
 			this.showChangeLang = true
@@ -512,15 +547,19 @@ export default {
 		},
 		initHeadVedio () {
 			if (this.headVideoUrl) {
-				const headVideo = this.$refs.headVideo
-				const userVideo = this.$refs.userVideo
-				const loadVideo = this.$refs.loadVideo
-				headVideo.style.display = 'block' // 展示片头视频
-				userVideo.style.display = 'none' // 影藏原视频
-				loadVideo.style.display = 'none' // 影藏插入视频
+				// const headVideo = this.$refs.headVideo
+				// const userVideo = this.$refs.userVideo
+				// const loadVideo = this.$refs.loadVideo
+				// headVideo.style.display = 'block' // 展示片头视频
+				// userVideo.style.display = 'none' // 影藏原视频
+				// loadVideo.style.display = 'none' // 影藏插入视频
+				this.headVideoShow = true // 展示片头视频
+        this.userVideoShow = false // 影藏原视频
+        this.loadVideoShow = false // 影藏插入视频
 				this.showSecondTitle = false
 				this.showSynopsis = false
 				this.showChangeLang = false
+				this.isLoadBegin = false
 			}
 		},
 		addPlayListener () {
@@ -529,8 +568,10 @@ export default {
 			const loadVideoRef = this.$refs.loadVideo
 
 			headVideoRef.onended = () => {
-				headVideoRef.style.display = 'none'
-				userVideoRef.style.display = 'block'
+				// headVideoRef.style.display = 'none'
+				// userVideoRef.style.display = 'block'
+				this.headVideoShow = false
+        this.userVideoShow = true
 				this.showSecondTitle = true
 				this.showSynopsis = true
 				this.showChangeLang = true
@@ -548,6 +589,21 @@ export default {
 				}
 			}
 			loadVideoRef.onended = this.continueUserVideo
+		},
+		//添加全屏监视器
+		addListener () {
+			window.document.addEventListener('fullscreenchange', () => {
+        this.isFullScreen=!this.isFullScreen
+      })
+      window.document.addEventListener('mozfullscreenchange', () => {
+        this.isFullScreen=!this.isFullScreen
+      })
+      window.document.addEventListener('webkitfullscreenchange', () => {
+        this.isFullScreen=!this.isFullScreen
+      })
+      window.document.addEventListener('msfullscreenchange', () => {
+        this.isFullScreen=!this.isFullScreen
+      })
 		},
 		loadComments () {
 			setTimeout(() => {
@@ -572,51 +628,10 @@ export default {
 		getFirstImageCover () {
 			//下两行可以解决Android微信中的封面问题
 			let video = this.$refs.userVideo
-			video.setAttribute("poster", JSON.parse(this.detail.cover)[0]);
-			//解决ios微信中的封面问题
-			/* const u = navigator.userAgent
-			const isiOS = !!u.match(/\(i[^;]+;( U;)? CPU.+Mac OS X/)
-			if (isiOS) {
-				console.log('is IOS')
-				//weixinJSBridge是微信浏览器的内置接口
-				if (window.WeixinJSBridge) {
-					window.WeixinJSBridge.invoke('getNetworkType', {}, function (e) {
-						video.play() 
-						// setTimeout(() => { video.pause() }, 200)
-					}, false)
-				} else {
-					window.document.addEventListener('WeixinJSBridgeReady', function () {
-						window.WeixinJSBridge.invoke('getNetworkType', {}, function (e) {
-							video.load()
-							video.play()
-							// setTimeout(() => { video.pause() }, 200)
-						})
-					}, false)
-				}
-			} */
-
-		/* getPoster () {
-			let video
-			if (this.headVideoUrl) video = this.$refs.headVideo
-			else video = this.$refs.userVideo
-			//使用严格模式
-			'use strict';
-			//第一帧图片与原视频的比例
-			var scal = 0.8;
-			//监听页面加载事件
-			video.addEventListener('dataLoad',function(){
-				//创建一个画布
-				var canvas = document.createElement('canvas');
-				canvas.width = video.style.width*scal;
-				canvas.height = video.style.height*scal;
-				//绘制图片
-				canvas.getContentext('2d').drawImage(video,0,0,canvas.width,canvas.height);
-				//设置标签的poster属性
-				video.setAttribute("poster",canvas.toDataURL("image/png"));
-				
-			});
-		} */
-
+			video.setAttribute("poster", JSON.parse(this.detail.cover)[0])
+		},
+		controlsOrNot () {
+			if (window.navigator.userAgent.match(/(iPhone|iPod|Android|ios|Windows Phone)/i)) this.haveControls = true
 		}
 	},
 	created () {
@@ -624,10 +639,13 @@ export default {
 		this._getProductDetail()
 	},
 	mounted () {
+		this.controlsOrNot()
 		this.isAlbumPlay()
-		// this.getPoster()
 		this.addPlayListener()
 		this.loadComments()
+	},
+	activated () {
+		this.$refs.videowrap.style = ''
 	}
 }
 </script>
@@ -646,7 +664,7 @@ export default {
     padding-bottom: 20
 	}
 	.detail-body {
-		width: 778px;
+		width: 788px;
 		background: #fff;
 		padding-top: 50px;
 		margin-bottom: 200px;
@@ -742,102 +760,162 @@ export default {
 // plus0视频框
 .plus0_wrap1 {
 	position: relative;
-	video {
-		object-fit: cover;
-	}
-	/* video::-webkit-media-controls-fullscreen-button {
-		appearance: none;
-	}
-	.fullbtn {
-		cursor: pointer;
-		color: #fff;
-		position: absolute;
-		bottom: 10%;
-		right: 8%;
-	} */
-	// plus0_1_logo和公司
-	.plus0_1_channel {
-		font-size: 20px;
-		color: rgb(255, 255, 255);
-		position: absolute;
-		top: 25px;
-		left: 25px;
-		// plus_logo 
-		.plus_logo_show {
-			display: flex;
-			flex-direction: column;
-			align-items: center;
-			img {
-				max-width: 85px;
-				max-height: 60px;
-			}
+		video {
+			object-fit: cover;
+			object-position: center center;
 		}
-		.plus_company_name {
-			font-family: 'Microsoft YaHei';
-			font-weight: bold;
-			font-size: 16px;
-			padding-top: 2px;
-			letter-spacing: 2px;
-			opacity: 0.7;
-			text-align: center;
+		/* video::-webkit-media-controls-fullscreen-button {
+			appearance: none;
 		}
-	}
-	// plus0_2_视频简介
-	.plus_des_wrap1 {
-		color: #fff;
-		width: 710px;
-		position: absolute;
-		bottom: 15%;
-		left: 5%;
-		.plus_des_main1 {
-			padding-left: 5px;
-			font-size: 19px;
-			font-weight: bold;
-			text-align: left;
-			height: 30px;
-			line-height: 30px;
-			background-image: linear-gradient(to right, rgba(230,100,26,1), rgba(230,100,26,0))
-		}
-		.plus_des_detail1 {
-			padding-left: 5px;
-			font-size: 16px;
-			font-weight: bold;
-			text-align: left;
-			height: 24px;
-			line-height: 24px;
-			background-image: linear-gradient(to right, rgba(66,27,4,1), rgba(66,27,4,0))
-		}
-	}
-	// plus0_3_语言切换
-	.plus0_3_langChoose {
-		outline: none;
-		position: absolute;
-		top: 10px;
-		right: 10px;
-		text-align: center;
-		.plus0_3_langchooseitem { // 列表
+		.fullbtn {
+			cursor: pointer;
 			color: #fff;
-			padding: 1px 5px 6px;
-			border-radius: 5px;
-			background-color: rgba(0,0,0,0.5);
-			/* .plus0_3_langchooseitem_title {
-				background-color: coral;
-				font-size: 16px;
-				opacity: 0.5;
-				padding: 3px;
-				border-radius: 5px;
-			} */
-			.plus0_3_langchooseitem_item {
-				margin-top: 8px;
-				font-size: 14px;
-				opacity: 0.6;
-				cursor: pointer;
+			position: absolute;
+			bottom: 10%;
+			right: 8%;
+		} */
+		// plus0_1_logo和公司
+		.plus0_1_channel {
+			font-size: 20px;
+			color: rgb(255, 255, 255);
+			position: absolute;
+			top: 25px;
+			left: 25px;
+			// plus_logo 
+			.plus_logo_show {
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				img {
+					max-width: 85px;
+					max-height: 60px;
+				}
 			}
-			.plus0_3_langchooseitem_active {
-				color: coral;
+			.plus_company_name {
+				font-family: 'Microsoft YaHei';
+				font-weight: bold;
+				font-size: 16px;
+				padding-top: 2px;
+				letter-spacing: 2px;
+				opacity: 0.7;
+				text-align: center;
 			}
 		}
-	}
+		//全屏样式
+		.logocompanyfull {
+			font-size: 20px;
+			color: rgb(255, 255, 255);
+			position: absolute;
+			top: 25px;
+			left: 25px;
+			// plus_logo 
+			.plus_logo_show {
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				img {
+					max-width: 200px;
+					max-height: 120px;
+				}
+			}
+			.plus_company_name {
+				font-family: 'Microsoft YaHei';
+				font-weight: bold;
+				font-size: 26px;
+				padding-top: 2px;
+				letter-spacing: 2px;
+				opacity: 0.7;
+				text-align: center;
+			}
+		}
+		// plus0_2_视频简介
+		.plus_des_wrap1 {
+			color: #fff;
+			width: 90%;
+			position: absolute;
+			bottom: 15%;
+			left: 5%;
+			.plus_des_main1 {
+				padding-left: 5px;
+				font-size: 19px;
+				font-weight: bold;
+				text-align: left;
+				height: 30px;
+				line-height: 30px;
+				background-image: linear-gradient(to right, rgba(230,100,26,1), rgba(230,100,26,0))
+			}
+			.plus_des_detail1 {
+				padding-left: 5px;
+				font-size: 16px;
+				font-weight: bold;
+				text-align: left;
+				height: 24px;
+				line-height: 24px;
+				background-image: linear-gradient(to right, rgba(66,27,4,1), rgba(66,27,4,0))
+			}
+		}
+		//全屏是简介样式
+		.deswrapfull {
+			color: #fff;
+			width: 90%;
+			position: absolute;
+			bottom: 15%;
+			left: 5%;
+			.plus_des_main1 {
+				padding-left: 8px;
+				font-size: 24px;
+				font-weight: bold;
+				text-align: left;
+				height: 40px;
+				line-height: 40px;
+				background-image: linear-gradient(to right, rgba(230,100,26,1), rgba(230,100,26,0))
+			}
+			.plus_des_detail1 {
+				padding-left: 8px;
+				font-size: 20px;
+				font-weight: bold;
+				text-align: left;
+				height: 30px;
+				line-height: 30px;
+				background-image: linear-gradient(to right, rgba(66,27,4,1), rgba(66,27,4,0))
+			}
+		}
+		// plus0_3_语言切换
+		.plus0_3_langChoose {
+			outline: none;
+			position: absolute;
+			top: 10px;
+			right: 10px;
+			text-align: center;
+			.plus0_3_langchooseitem { // 列表
+				color: #fff;
+				padding: 1px 5px 6px;
+				border-radius: 5px;
+				background-color: rgba(0,0,0,0.5);
+				/* .plus0_3_langchooseitem_title {
+					background-color: coral;
+					font-size: 16px;
+					opacity: 0.5;
+					padding: 3px;
+					border-radius: 5px;
+				} */
+				.plus0_3_langchooseitem_item {
+					margin-top: 8px;
+					font-size: 14px;
+					opacity: 0.6;
+					cursor: pointer;
+				}
+				.itemfull {
+					margin-top: 8px;
+					font-size: 20px;
+					opacity: 0.6;
+					cursor: pointer;
+				}
+				.plus0_3_langchooseitem_active {
+					color: coral;
+				}
+			}
+		}
 }
 @media screen and (max-width: 700px) {
 	.work-detail .detail-body {
@@ -862,7 +940,7 @@ export default {
 	.plus0_wrap1 .plus_des_wrap1 {
 		transform: scale(0.5);
 		bottom: 10%;
-		left: -40%;
+		left: -18%;
 	}
 }
 // plus1评论区

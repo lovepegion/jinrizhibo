@@ -22,7 +22,7 @@
         <!-- 视频框 -->
         <div class="video-container" ref="videocontainer">
           <!-- plus0_1_logo和公司 -->
-          <div class="plus0_1_channel">
+          <div :class="isFullScreen?'logocompanyfull':'plus0_1_channel'">
             <div v-if="companiesOffTag.indexOf(currentVideo.choosedCompany)<=-1" class="plus_logo_show">
               <img v-if="currentVideo.logoUrl" :src="(currentVideo.logoUrl.indexOf('http') != -1) ? currentVideo.logoUrl : (baseUrl + currentVideo.logoUrl)">
             </div>
@@ -35,7 +35,7 @@
             </div>
           </div>
           <!-- plus0_2_视频简介 -->
-          <div class="plus_des_wrap1">
+          <div :class="isFullScreen?'deswrapfull':'plus_des_wrap1'">
             <div class="plus_des_main1" v-if="currentVideo.secondTitle && showSecondTitle">{{currentVideo.secondTitle}}</div>
             <div class="plus_des_detail1" v-if="currentVideo.synopsis && showSynopsis">{{currentVideo.synopsis}}</div>
           </div>
@@ -43,7 +43,6 @@
             v-show="headVideoShow && !userVideoShow && !loadVideoShow"
             ref="headVideo"
             :autoplay="currentVideo.headVideo"
-            controls
             disablePictureInPicture
             controlsList="nodownload noremoteplayback"
             :src="(currentVideo.headVideo.indexOf('http') != -1) ? currentVideo.headVideo : (baseUrl + currentVideo.headVideo)"
@@ -54,7 +53,6 @@
             v-show="!headVideoShow && userVideoShow && !loadVideoShow"
             ref="userVideo"
             :autoplay="!currentVideo.headVideo"
-            controls
             disablePictureInPicture
             controlsList="nodownload noremoteplayback"
             :src="(currentVideo.videoUrl.indexOf('http') != -1) ? currentVideo.videoUrl : (baseUrl + currentVideo.videoUrl)"
@@ -66,13 +64,19 @@
             ref="loadVideo"
             :src="(currentVideo.insertVideo.indexOf('http') != -1) ? currentVideo.insertVideo : (baseUrl + currentVideo.insertVideo)"
             style="width: 100%;height:100%"
-            controls
           ></video>
+          <!-- 自定义controller -->
+					<!-- 片头控制器 -->
+					<PlayController v-if="headVideoShow && !userVideoShow && !loadVideoShow" :targetVideo="$refs.headVideo" :fullContainer="$refs.videocontainer" :autoplay="currentVideo.headVideo" :currentIndex="currenVideoIndex" :isLoadBegin="false"/>
+					<!-- 用户视频控制器 -->
+					<PlayController v-if="!headVideoShow && userVideoShow && !loadVideoShow" :targetVideo="$refs.userVideo" :fullContainer="$refs.videocontainer" :changeLangFlag="changeLangFlag" :autoplay="!currentVideo.headVideo" :currentIndex="currenVideoIndex" :isLoadBegin="false"/>
+					<!-- 插入视频控制器 -->
+					<PlayController v-if="!headVideoShow && !userVideoShow && loadVideoShow" :targetVideo="$refs.loadVideo" :fullContainer="$refs.videocontainer" :autoplay="false" :currentIndex="currenVideoIndex" :isLoadBegin="isLoadBegin"/>
           <!-- plus0_3_语言切换 -->
           <div class="plus0_3_langChoose" v-if="currentVideo.videoUrls && showChangeLang">
             <ul class="plus0_3_langchooseitem">
-              <li @click="onSwitch(-1, currentVideo.mainLang)" class="plus0_3_langchooseitem_item" :class="{plus0_3_langchooseitem_active:switchedIndex===-1}">{{currentVideo.mainLang}}</li>
-              <li v-for="(item, index) in currentVideo.videoUrls" :key="index" @click="onSwitch(index, item.language)" class="plus0_3_langchooseitem_item" :class="{plus0_3_langchooseitem_active:switchedIndex===index}">{{item.language}}</li>
+              <li @click="onSwitch(-1, currentVideo.mainLang)" :class="[isFullScreen?'itemfull':'plus0_3_langchooseitem_item', {'plus0_3_langchooseitem_active':switchedIndex===-1}]">{{currentVideo.mainLang}}</li>
+              <li v-for="(item, index) in currentVideo.videoUrls" :key="index" @click="onSwitch(index, item.language)" :class="[isFullScreen?'itemfull':'plus0_3_langchooseitem_item', {'plus0_3_langchooseitem_active':switchedIndex===index}]">{{item.language}}</li>
             </ul>
           </div>
         </div>
@@ -165,6 +169,7 @@ import ChannelListItem from '@/components/ChannelListItem.vue'
 import AlbumListItem from '@/components/AlbumListItem.vue'
 import ChannelShare from '@/components/share/ChannelShare.vue'
 import CommentItem from '@/components/commentItem/CommentItem.vue'
+import PlayController from '@/components/PlayController'
 import { getChannelCompany, getProductByPage, getProductDetail, collectionProduct, follow } from '@/api/make'
 import { getAlbumBykey } from '@/api/album.js'
 import { collectProduct, likeProduct, followProduct, getComments, sendComment } from '@/api/update.js'
@@ -199,7 +204,8 @@ export default {
     VideoListItem,
     AlbumListItem,
     ChannelShare,
-    CommentItem
+    CommentItem,
+    PlayController
   },
   data() {
     return {
@@ -224,6 +230,9 @@ export default {
       albumScrollFinished: false,  // 专辑滚动列表加载完成
       albumScrollloading: false, //专辑滚动列表控制
       isFirstLoad: true, //第一次加载时，展示第一个视频
+      isFullScreen: false, //是否全屏,
+      isLoadBegin: false, //是否开始播放插播视频，用于控制器切换播放按钮
+      changeLangFlag: -1,
       getCompanyAlbumsParams: {
         pageNumber: 1,
         pageSize: 20,
@@ -249,7 +258,30 @@ export default {
   },
   methods: {
     fullScreen () {
-      this.$refs.videocontainer.requestFullscreen()
+      let ele = this.$refs.videocontainer
+      if (ele.requestFullscreen) {
+        ele.requestFullscreen();
+      } else if (ele.mozRequestFullScreen) {
+        ele.mozRequestFullScreen();
+      } else if (ele.webkitRequestFullscreen) {
+        ele.webkitRequestFullscreen();
+      } else if (ele.msRequestFullscreen) {
+        ele.msRequestFullscreen();
+      }
+      this.isFullScreen = true
+    },
+    nofullScreen () {
+      let ele = this.$refs.videocontainer
+      if(window.document.exitFullScreen) {
+        document.exitFullScreen();
+      } else if(window.document.mozCancelFullScreen) {
+        document.mozCancelFullScreen();
+      } else if(window.document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+      } else if(ele.msExitFullscreen) {
+        ele.msExitFullscreen();
+      }
+      this.isFullScreen = false
     },
     onSwitch (index, lang) {
       console.log('onswitch')
@@ -280,6 +312,7 @@ export default {
 				else userVideoRef.src = this.baseUrl + this.currentVideo.videoUrls[this.switchedIndex].videoUrl
 				userVideoRef.load()
 			}
+      this.changeLangFlag = index
 		},
     // 发表评论
 		async onSendComment () {
@@ -530,6 +563,7 @@ export default {
       }
     },
     playLoadVideo () {
+      this.isLoadBegin = true
       const userVideoRef = this.$refs.userVideo
       const loadVideoRef = this.$refs.loadVideo
       if (this.currentVideo.insertVideo) {
@@ -559,6 +593,7 @@ export default {
         this.showSecondTitle = false
         this.showSynopsis = false
         this.showChangeLang = false
+        this.isLoadBegin = false
       }
     },
     continueUserVideo () {
@@ -594,6 +629,21 @@ export default {
       }
       loadVideoRef.onended = this.continueUserVideo
     },
+    //添加全屏监视器
+		addListener () {
+			window.document.addEventListener('fullscreenchange', () => {
+        this.isFullScreen=!this.isFullScreen
+      })
+      window.document.addEventListener('mozfullscreenchange', () => {
+        this.isFullScreen=!this.isFullScreen
+      })
+      window.document.addEventListener('webkitfullscreenchange', () => {
+        this.isFullScreen=!this.isFullScreen
+      })
+      window.document.addEventListener('msfullscreenchange', () => {
+        this.isFullScreen=!this.isFullScreen
+      })
+		},
   },
   mounted () {
     this._getChannelCompany()
@@ -665,6 +715,33 @@ export default {
             text-align: center;
           }
         }
+        //全屏样式
+        .logocompanyfull {
+          font-size: 20px;
+          color: rgb(255, 255, 255);
+          position: absolute;
+          top: 25px;
+          left: 25px;
+          // plus_logo 
+          .plus_logo_show {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            img {
+              max-width: 200px;
+              max-height: 120px;
+            }
+          }
+          .plus_company_name {
+            font-family: 'Microsoft YaHei';
+            font-weight: bold;
+            font-size: 26px;
+            padding-top: 2px;
+            letter-spacing: 2px;
+            opacity: 0.7;
+            text-align: center;
+          }
+        }
         // plus0_2_视频简介
         .plus_des_wrap1 {
           color: #fff;
@@ -691,6 +768,32 @@ export default {
             background-image: linear-gradient(to right, rgba(66,27,4,1), rgba(66,27,4,0))
           }
         }
+        //全屏是简介样式
+        .deswrapfull {
+          color: #fff;
+          width: 90%;
+          position: absolute;
+          bottom: 15%;
+          left: 5%;
+          .plus_des_main1 {
+            padding-left: 8px;
+            font-size: 24px;
+            font-weight: bold;
+            text-align: left;
+            height: 40px;
+            line-height: 40px;
+            background-image: linear-gradient(to right, rgba(230,100,26,1), rgba(230,100,26,0))
+          }
+          .plus_des_detail1 {
+            padding-left: 8px;
+            font-size: 20px;
+            font-weight: bold;
+            text-align: left;
+            height: 30px;
+            line-height: 30px;
+            background-image: linear-gradient(to right, rgba(66,27,4,1), rgba(66,27,4,0))
+          }
+        }
         // plus0_3_语言切换
         .plus0_3_langChoose {
           outline: none;
@@ -706,6 +809,12 @@ export default {
             .plus0_3_langchooseitem_item {
               margin-top: 8px;
               font-size: 14px;
+              opacity: 0.6;
+              cursor: pointer;
+            }
+            .itemfull {
+              margin-top: 8px;
+              font-size: 20px;
               opacity: 0.6;
               cursor: pointer;
             }

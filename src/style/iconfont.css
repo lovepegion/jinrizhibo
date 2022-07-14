@@ -1,8 +1,8 @@
 @font-face {
   font-family: "iconfont"; /* Project id 2882191 */
-  src: url('//at.alicdn.com/t/font_2882191_xclr3evjn6.woff2?t=1652493598956') format('woff2'),
-       url('//at.alicdn.com/t/font_2882191_xclr3evjn6.woff?t=1652493598956') format('woff'),
-       url('//at.alicdn.com/t/font_2882191_xclr3evjn6.ttf?t=1652493598956') format('truetype');
+  src: url('iconfont.woff2?t=1657261170420') format('woff2'),
+       url('iconfont.woff?t=1657261170420') format('woff'),
+       url('iconfont.ttf?t=1657261170420') format('truetype');
 }
 
 .iconfont {
@@ -11,6 +11,30 @@
   font-style: normal;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+.icon-mute_fill:before {
+  content: "\e81c";
+  color: white;
+}
+
+.icon-Pause:before {
+  content: "\e625";
+  color: white;
+}
+
+.icon-bofang:before {
+  content: "\e87c";
+  color: white;
+}
+
+.icon-24gf-playCircle:before {
+  content: "\ea82";
+}
+
+.icon-shengyintianchong:before {
+  content: "\e6b3";
+  color: white;
 }
 
 .icon-qq:before {
@@ -39,10 +63,16 @@
 
 .icon-tuichuquanping:before {
   content: "\e792";
+  color: white;
 }
 
 .icon-quanping1:before {
   content: "\e634";
+  color: white;
+}
+
+.icon-quanping:before {
+  content: "\e62f";
 }
 
 .icon-xiangshang4:before {

@@ -1048,6 +1048,7 @@ export default {
                 formData.append('height', String(this.anchorSetting.curBgSize.h))
               }
               add(formData).then( res => {
+                console.dir(res);
                 if (res.message && res.message.code === 0) {
                   if (!res.data.data || !res.data.data.taskId) {
                     this.$message.error('配音文本缺少语种标签')

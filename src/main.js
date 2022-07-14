@@ -4,7 +4,7 @@ import router from './router'
 import store from './store'
 import './plugins/antd'
 import './style/index.less'
-import './style/iconfont.less'
+import './style/iconfont.css'
 import { Scroll } from '@/directive/index.js'
 
 Vue.config.productionTip = false
